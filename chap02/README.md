@@ -566,3 +566,205 @@ for (var i in list) {
   }
 }
 ```
+
+## 函數
+
+函數主要是將重複運算的陳述式封裝在一起，有利於程式碼的重複使用，也是高階程式語言不可或缺的功能。JavaScript內建有預設好的全域函數，用於處理一些常見的處理。
+
+| 函數名稱      | 說明                                           |
+|:-------------|:----------------------------------------------|
+| eval()       | 將運算式轉換成變數名稱或物件名稱，藉此讀取此名稱的值 |
+| escape()     | 將字串轉換成用URL編碼的字串                      |
+| unescape()   | 將URL編碼的字串轉回ASCII字元的字串                |
+| encodeURI()  | 將字串編碼為一個有效的統一資源識別字(URI)字串       |
+| decodeURI()  | 把編碼過的統一資源識別字(URI)轉換回字串            |
+| parseFloat() | 將物件或字串轉換成浮點數                         |
+| parseInt()   | 將物件或字串轉換成整數                           |
+| Number()     | 將物件或字串轉換成Number物件                     |
+| String()     | 將物件轉換成字串                                |
+| Boolean()    | 將物件轉換成布林值                               |
+| isFinite()   | 檢查陳述式或是物件是否為有限數並回傳布林值          |
+| isNaN()      | 檢查陳述式或是物件是否為非Number物件並回傳布林值    |
+
+### 函數定義及呼叫
+
+JavaScript除了預設的全域函數可以使用外，也能透過自行定義的方式宣告自己的函數，至於定義的方法分成六種，直接看範例：
+
+```javascript
+// 範例1：宣告一個函數名稱然後再呼叫
+function fnprint(val) {
+  console.log('The value is: ' + val);
+}
+fnprint('ok');
+
+// 範例2：宣告變數來使用Function類別，然後透過這變數來呼叫
+var fnprint = new Function('val', 'console.log(\'The value is: \' + val);');
+fnprint('ok');
+
+// 範例3：宣告變數來定義一個匿名函數，再透過這變數呼叫匿名函數
+var fnprint = function(val) {
+  console.log('The value is: ' + val);
+}
+fnprint('ok');
+
+// 範例4：直接定義一個匿名函數，然後直接執行它
+(function(val) {
+  console.log('The value is: ' + val);
+})('ok');
+
+// 範例5：根據JavaScript的小括弧運算符優先權，下面範例會從最裡面的小括弧直接強致執行匿名函數
+(function(val) {
+  console.log('The value is: ' + val);
+}('ok'));
+
+// 範例6：透過void關鍵字直接執行緊跟著的匿名函數
+void function(val) {
+  console.log('The value is: ' + val);
+}('ok');
+```
+
+範例1 是比較常見做法，可稱為命名函數或是函數陳述式，其他範例都叫做函數運算式，意思是函數透過運算後存在一個變數，或直接執行。
+
+範例2 是透過function類別來建立函數然後存到一個變數中。其他範例則是匿名函數的應用。
+
+函數運算式和函數陳述式有兩點不同：
+
+- 只要函數陳述式有被定義到，無論程式碼是在此函數陳述式之前或之後都可以被呼叫到。至於函數運算式只有在建立後才能被呼叫
+- 函數陳述式只要被定義過後就無法從記憶體中刪除並回收，如果是函數運算式則是定義完後就被回收了。剛的範例4、5和6都是被呼叫完之後就被回收了，之後也不能再被呼叫，就只有在當下執行過那麼一次
+
+  範例3 則是把函數運算式存在變數中，所以只要變數的參考計數器沒有歸零或是被刪除，那麼就可以透過此變數呼叫函數運算式。但是如果參考計數器歸零或是被刪除了，那麼就會被垃圾回收機制(Garbage Collection)回收：
+
+  ```javascript
+  var fnprint = function(val) {
+    console.log('The value is: ' + val);
+  }
+  fnprint('ok');   // 可以呼叫
+  fnprint = null;
+  fnprint('fail'); // 不能再次被呼叫
+  ```
+
+### 閉包 (Closure)
+
+在JavaScript中，函數擁有著自己的獨立定義域(Domain)，可以宣告自己的變數在函數裡面使用，甚至是忽略外部有相同名稱的變數，這樣的情況，就被稱為閉包。
+
+一個簡單的閉包範例如下：
+
+```javascript
+var x = 50;
+
+function closureFunc() {
+  var x = 100;
+  
+  return x;
+}
+
+console.log(x);
+console.log(closureFunc());
+```
+
+函數 `closureFunc()` 有自己的定義域，不受外部變數影響。
+
+閉包與函數有著緊密的關係，以至於許多人將閉包與普通函數視為相同的東西。事實上，你可以視閉包為一種函數的使用場景，用來隔開外界的變數，和準備一個能獨立存在變數的環境。
+
+```javascript
+function BMI(name) {
+  var BMIResult = 0;
+  function count_BMI(weight, height) {
+    var mass = parseInt(weight);
+    var counter = parseInt(height) / 100;
+    BMIResult = mass / (counter * counter);
+    
+    console.log(name + ', your BMI is' + BMIResult + '.');
+    
+    return BMIResult;
+  }
+  
+  return count_BMI;
+}
+
+// 建立閉包函數
+var Wesley_BMI = BMI('Wesley');
+var Fred_BMI = BMI('Fred');
+
+// 使用閉包函數
+Wesley_BMI(75, 175);
+Fred_BMI(66, 180);
+```
+
+會顯示不同的名稱是誰，是因為人名在建立閉包函數時就已經設定好，存放在閉包獨立環境的變數之中。
+
+閉包函數有兩個特點：
+
+- 閉包函數在執行的過程中，閉包函數內的區域變數都可以被存取
+- 閉包函數執行結束後，維持最後區域變數的值
+
+因此閉包函數的使用重點在閉包函數內的變數如何存取，也就是Scope的作用範圍；以及閉包函數內的變數何時刪除，也就是變數的記憶體使用。
+
+## 事件驅動機制 (Event-driven)
+
+JavaScript最大的特色就是事件驅動(Event-driven)的機制。因為這樣的設計，讓JavaScript程式跑起來像是多工平行處理一般，但有時卻又不是這麼一回事，讓許多初學者或不熟悉機制的人分不清楚狀況。所以，開發JavaScript應用程式，最重要的是要熟悉和了解事件驅動機制(Event-driven)，不然寫出來的城市將會是一個墨大災難。
+
+### 事件機制
+
+簡單來說，JavaScript引擎是以**事件為單位在執行程式**，當一個事件的工作完成後，會找到下個事件去執行，一旦沒有任何事件需要被執行，整個程式就會結束。一個常見的例子 `setTimeout()` 函數，就可以說明事件引擎的行為。
+
+```javascript
+console.log('Start');
+
+setTimeout(function() {
+  console.log('Trigger');
+}, 1000);
+
+console.log('End');
+```
+
+```shell
+Start
+End
+Trigger
+```
+
+以上就算 `setTimeout()` 延遲的秒數設置為 0 秒，印出字串的順序不變。
+
+`setTimeout()` 並非只是依照延遲秒數，然後觸發執行這麼簡單。真正的情況是， `setTimeout()` 會向JavaScript事件引擎註冊一個新的事件，讓這新的事件準備被觸發執行，然後 `setTimeout()` 返回並繼續執行下一行程式。當JavaScript引擎跑完了每一行的程式，就代表完成目前的事件工作，然後JavaScript引擎就會緊接著去尋找下一個可以處理的事件。
+
+因為 `setTimeout()` 有註冊一個事件，所以該事件會被JavaScript視為下一個可以處理的事件之一，然後又因為被設定為沒有延遲秒數，也滿足觸發條件，所以才觸發執行。
+
+### 非同步 (Asynchronous)
+
+事件驅動時常會與非同步綁上關係，因為以非同步概念設計的程式，與事件驅動機制相當合的來。非同步的概念，就是將需要花時間等待、無法及時完成的工作，丟到背景等待，而不是讓程式只為了一個工作，停下來等待完成，導致整個程式停擺。
+
+所以，非同步的開發模式在JavaScript上的設計方式，像前一小節提到的，你可先註冊個事件，等到工作完成滿足條件後再觸發，再接著處理接下來的工作。
+
+## 原型 (Prototype)
+
+當程式越來越複雜，我們就會開始想辦法整理並管理它，甚至是運用一些手段來簡化程式邏輯和重複利用(reuse)自己寫的程式碼。很多熟悉物件導向開發的人，常會在JavaScript語言中尋找類別(Class)的存在，試圖用類別來包裝自己的程式碼。
+
+事實上，JavaScript並沒有類別，所以，如果你想要達成如同類別的功能，必須利用JavaScript動態物件的特性來自己實作，但那又是另外一種JavaScript開發的技巧了。先撇開特殊技巧不談，JavaScript其實提供了原型(Prototype)的功能來包裝物件，類似物件導向開發中的類別功能。
+
+原型的概念在JavaScript中隨處可見其蹤跡，簡單來說，JavaScript的物件可以參考原型做許多變化，進而變成獨一無二的物件。像JavaScript的陣列物件、字串物件等，都是由基本的JavaScript物件演化而來，只是參考的原型不同，進而功能不同罷了。
+
+在JavaScript，我們可利用原型，設計一個屬於自己的物件，如下：
+
+```javascript
+var MyObject = function() {
+  this.count = 0;
+}
+MyObject.prototype.touch = function() {
+  this.count++;
+}
+```
+
+接著可直接使用這個原型物件，來建立一個新的物件，讓這個新的物件所有定義都可參考這個原型物件：
+
+```javascript
+var myObj = new MyObject();
+
+myObj.touch();
+myObj.touch();
+myObj.touch();
+
+console.log(myObj.count); // 3
+```
+
+## 記憶體回收機制 (Garbage Collection)
