@@ -210,10 +210,91 @@ import {readFile} from 'fs';
 
 在過去 JavaScript 就有一些類似 class 的語法，為什麼說類似? 因為 JavaScript 並沒有所謂的類別的概念，像是 `new` 和 `instanceof` 的功能都是藉由動態物件所模擬出來，透過建構式來產生新的實例。
 
-在 ES6 出現之前，傳統的方法是以建構式來做為類別，然後透過 `new` 運算子來產生實例。
+在 ES6 的語法中特別引入了class的概念，它只是現有 JavaScript 基於 prototype 繼承的語法糖，主要是想提供一種更簡單且更接近傳統物件導向語言的語法來建立物件和處理繼承。
+
+### Class 基本語法
+
+在 ES6 出現之前，傳統的方法是以建構式來做為類別，然後透過 `new` 運算子來產生實例。以下為簡單例子：
 
 ```javascript
 function Person(name) {
   this.name = name;
 }
+Person.prototype.sayHello = function() {
+  console.log('Hello! I am ' + this.name + '.');
+}
+
+var amy = new Person('Amy');
+amy.sayHello();
 ```
+
+Class類別就是在定義物件整體的結構藍圖，之後再利用這個已經定義好的類別，來產生多個相同結構的物件實例。而 ES6 的 class 關鍵字大部分的功能，在 ES5 其實也都能做到，新的語法基本上只是想讓物件原型的寫法更像物件導向的語法而已，並不是要引入什麼新的物件導向繼承模型到JavaScript中。上面範例改用class語法：
+
+```javascript
+class Person {
+  constructor(name) {
+    this.name = name;
+  }
+  sayHello() {
+    console.log('Hello! I am ' + this.name + '.');
+  }
+}
+
+const amy = new Person('Amy');
+amy.sayHello();
+```
+
+在上面程式碼中，可看到constructor方法，其實就是對應到傳統 ES5 的建構式，而 class 中的所有方法都是定義在 class 的 prototype 屬性上，且這些屬性都是不可列舉的(non-enumerable)，這裡的 sayHello 方法就等同於 Person.prototype.sayHello。要注意的是，在定義class物件時，不需要再加上 function 關鍵字。class 內的方法也不需要逗號。
+
+### constructor 方法
+
+建構式方法在使用 new 關鍵字建立實例時，會自動的被呼叫，所以 class 裡面必須要有這個方法。不過如果沒有實作這個建構式方法，預設 class 還是會幫你加上一個空的 `constructor() {}` 方法的。
+
+在呼叫完 constructor 方法後，預設是會回傳實例物件 this。不過你也可以自己指定想要回傳的物件：
+
+```javascript
+class Foo {
+  constructor() {
+    return Object.create(null);
+  }
+}
+
+console.log(new Foo() instanceof Foo); // false
+```
+
+### this 指向
+
+this 關鍵字它所代表的是函數執行時，所自動產生的一個內部物件。而 class 方法內部的 this 預設指向的就是 class 實例。因為 new 運算子的關係，this 會知道它應該指向哪一個物件實例。
+
+因此，當函數呼叫或是實例化物件時，都會以 this 所指向的物件，作為執行期間的依據。函數呼叫在一般情況下 this 通常是指向全域物件。實例化物件則是透過 new 呼叫 class 方法，這個 this 會指向新建立的物件實例：
+
+```javascript
+const amy = new Person('Amy');
+```
+
+這裡面的 this 指向的就是 amy 這個物件實例。
+
+### Getter 與 Setter
+
+在 class 內部可以透過 get 與 set 關鍵字，作為某個屬性的取得函數和設定函數的修飾字，以確保該屬性的存取行為。一般只有在私有屬性或是特殊值，才會特別使用這兩種方法。對於一般公開的原始資料類型，不需要這兩種方法就能夠直接存取。
+
+```javascript
+class Person {
+  constructor() {
+    this._name = ' ';
+  }
+  get name() {
+    return this._name;
+  }
+  set name(name) {
+    console.log('setter: ' + name);
+    this._name = name;
+  }
+}
+
+const person = new Person();
+person.name = 'Amy';      // 'setter: Amy'
+console.log(person.name); // Amy
+```
+
+## 繼承 ─ Extends 語法糖
