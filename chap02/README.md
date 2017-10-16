@@ -768,3 +768,63 @@ console.log(myObj.count); // 3
 ```
 
 ## 記憶體回收機制 (Garbage Collection)
+
+當你開始用JavaScript開發程式後會發現，開發JavaScript程式從來不需要釋放記憶體，但你要是有「生怕哪一天不小心就把系統的記憶體耗盡」的感覺，恭喜你，你是一個好的程式開發者，能時時注意程式執行的種種細節。
+
+別於一般程式語言，JavaScript並沒有可以直接釋放記憶體空間的方法，而是使用垃圾回收機制(Garbage Collection，GC)來管理程式執行時使用的記憶體。實際情況下，JavaScript會透過GC來自動回收用不到的記憶體空間，然後依照情況**重複利用**或是**進行釋放**。
+
+### 變數和物件的記憶體使用
+
+在JavaScript裡，所有東西都是物件(Object)所組成，所以我們唯一能使用記憶體的方式，就是建立一個個物件。
+
+然後你也可以想像的到，我們宣告的變數就像是一個個容器，可以裝各種物件，我們再透過這些變數去存取物件的實體。
+
+```javascript
+var container = new String('This is string');
+console.log('Length is ' + container.length);
+```
+
+事實上，變數其實並不是真的裝著物件，而是與物件存在一個關聯性。這意思是，只要你願意，你也可以隨時換掉變數內容，關聯到不同的物件，亦或是建立不同變數，關聯同一個物件
+
+```javascript
+var container = new String('This is string');
+container = new Array();
+container = {};
+
+var container_new = container; // container_new 會關聯到 {}
+```
+
+### 物件記憶體回收
+
+如果變數的內容被換掉了，那麼變數原來所關聯的物件，現在在哪裡? 是不是造成記憶體洩漏(Memory leaks)?
+
+前面提到，JavaScript是使用了GC的機制在管理記憶體，所以記憶體當然不可能這麼簡單就被浪費掉。其實，JavaScript的GC為了知道那些記憶體可以回收，在內部實作上，每個物件都有一個參考 (Reference) 的計數器，記錄著現在有多少變數使用著自己，一旦計數器為零，它就可能被GC所回收。
+
+```javascript
+var variable1 = new Object();
+var variable2 = variable1;
+```
+
+以上面的例子來說，物件的參考計數就是2，代表有兩個變數正在使用它。
+
+所以，如果我們要讓GC能回收這個上面的物件，就必須先移除所有變數與它的關聯性。
+
+```javascript
+variable1 = null;
+variable2 = null;
+```
+
+開發人員需要額外特別注意，並記得在哪裡引用了物件，否則導致物件遲遲無法被GC回收，產生記憶體洩漏，永遠不被釋放的問題。
+
+### 變數回收
+
+在JavaScript裡，變數是可以被移除的，就像你可以從一個鍵值物件中，把鍵移除掉一樣：
+
+```javascript
+var myvar = null;
+delete myvar;
+```
+
+所以，如果這個物件有值，有關聯到一個物件，那麼，當變數被移除掉時，該物件的參考計數就會被減一。
+
+不過只要物件被許多變數關聯，參考計數就仍然不為零，該物件也就不會被GC所回收。
