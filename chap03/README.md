@@ -298,3 +298,54 @@ console.log(person.name); // Amy
 ```
 
 ## 繼承 ─ Extends 語法糖
+
+在繼承的部分 ES6 封裝了 `extends` 關鍵字來實作類別繼承這項功能，但內部實作的原理仍然是基於原型鏈完成的。而繼承父類別的子類別，必須在 `constructor` 方法中呼叫 `super` 方法，`super` 方法其實就是父類別的 `constructor` 方法，因為子類別並沒有自己的 `this` 物件，必須要透過 `super` 方法來繼承父類別的 `this` 物件。如果子類別沒有呼叫 `super` 方法，它就會拿不到 `this` 物件。`super` 也可以用來指向父類別，存取其屬性或呼叫其中的方法。以下為簡單範例：
+
+```javascript
+class Person {
+  constructor(name) {
+    this.name = name;
+  }
+  sayHi() {
+    return 'Hi! I am ' + this.name + '.';
+  }
+}
+
+class Student extends Person {
+  constructor(name, id) {
+    super(name);
+    this.id = id;
+  }
+  sayHi() {
+    return super.sayHi() + ' ID: ' + this.id;
+  }
+}
+```
+
+在繼承時要注意的是，子類別的 `constructor` 方法中的 `super` 必須先呼叫之後，才可以使用 `this` 關鍵字，所以在 `constructor` 內的第一行就先呼叫比較保險。另外，子類別中的屬性或方法的名稱，不能與父類別相同，否則會覆蓋掉父類別的屬性或是方法。若是要使用父類別的方法，也是透過 `super` 關鍵字來取得。
+
+## 非同步程式流程控制
+
+JavaScript這種單執行緒、事件驅動的程式語言中，非同步流程控制是很重要的。
+
+Node.js主要使用 Error-First 風格的 callback 來控制非同步流程，也就是當有錯誤發生時，會將錯誤訊息放在 callback 的第一個參數傳回，若沒有錯誤則第一個值會是 null，因此稱為 Error-First Callback，這也是處理非同步流程的一種方法。
+
+```javascript
+var fs = require('fs');
+
+fs.readFile('/foo.txt', function(err, data) {
+  if (err) throw err;
+  console.log(data);
+});
+```
+
+而一些剛接觸的開發者，在流程控制上可能聽過Promise的一些好處，目前 ES6 也原生支援了 Promise 及 Generator，且 ES7 也引進了 async/await 語法，讓開發者可以更容易控制非同步的程式流程，也能減少 callback 的使用，讓整個程式碼更好理解。
+
+### Promise 是什麼 ?
+
+一個 Promise 代表一個非同步操作的結果，它有三種狀態，一旦 Promise 的狀態變為 fulfilled 或 rejected，那麼它就不會再改變其狀態了。
+
+- pending：一Promise的初始狀態，或狀態未定。
+- fulfilled：操作成功
+- rejected：操作失敗
+
