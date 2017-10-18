@@ -423,5 +423,41 @@ doSomething().then((result) => {
 要暫停一個 generator function 必須在函數內部使用 `yield` 關鍵字，在函數外部是沒有辦法可以暫停 generator 的。暫停後要回復，則必須從外部呼叫 `next()` 方法來控制它回復，generator 本身沒有辦法自行回復。所以一個 generator 函數基本上可以一直重複的暫停又回復。以下為 generator 函數的宣告：
 
 ```javascript
+function *gen() {
+  var total = 1 + (yield 'foo');
+}
+```
+
+這語法看起來可能有點奇怪，`*` 有點像函數指標，但這只是用來辨別這個函數是一個 generator 的函數。ES6 也沒有特別規定 `*` 應該寫在哪個位置，所以下面這幾種宣告方式都是正確的：
+
+```javascript
+function * gen(x, y) {}
+function* gen(x, y) {}
+function *gen(x, y) {}
+function*gen(x, y) {}
+```
+
+看一下更完整的程式碼：
+
+```javascript
+function *gen() {
+  console.log('before yied');
+  var total = 1 + (yield 'foo');
+  console.log('after yield, ' + total); // 10
+}
+
+var a = gen();
+console.log(a.next());
+console.log(a.next(9));
+```
+
+結果：
 
 ```
+'before yied'
+{value: "foo", done: false}
+'after yield, 10'
+{value: undefined, done: true}
+```
+
+這段程式碼在第一次呼叫 `gen()` 時會傳回一個 generator 物件。而 `next()` 會回傳一個 generator 產生的物件，包含 value 及 done 屬性。所以第一次呼叫 `next()` 方法時，程式碼執行到 yield 會暫停，然後函數會將 yield 右邊的 'foo' 字串作為 value 傳出
