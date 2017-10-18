@@ -339,13 +339,89 @@ fs.readFile('/foo.txt', function(err, data) {
 });
 ```
 
-而一些剛接觸的開發者，在流程控制上可能聽過Promise的一些好處，目前 ES6 也原生支援了 Promise 及 Generator，且 ES7 也引進了 async/await 語法，讓開發者可以更容易控制非同步的程式流程，也能減少 callback 的使用，讓整個程式碼更好理解。
+而一些剛接觸的開發者，在流程控制上可能聽過 Promise 的一些好處，目前 ES6 也原生支援了 Promise 及 Generator，且 ES7 也引進了 async/await 語法，讓開發者可以更容易控制非同步的程式流程，也能減少 callback 的使用，讓整個程式碼更好理解。
 
 ### Promise 是什麼 ?
 
-一個 Promise 代表一個非同步操作的結果，它有三種狀態，一旦 Promise 的狀態變為 fulfilled 或 rejected，那麼它就不會再改變其狀態了。
+一個 Promise 代表一個**非同步操作的結果**，它有三種狀態，一旦 Promise 的狀態變為 fulfilled 或 rejected，那麼它就不會再改變其狀態了。
 
-- pending：一Promise的初始狀態，或狀態未定。
+- pending：一個 Promise 的初始狀態，或狀態未定。
 - fulfilled：操作成功
 - rejected：操作失敗
 
+其實也有一些第三方模組實作了 Promise 的功能，例如 Q、when、WinJS 及 RSVP.js 等。不管是 JavaScript 原生的 Promise 或第三方模組，它們都遵守一個通用的、標準化規範：Promises/A+，接下來我們將以 JavaScript ES6 原生的 Promise 來做介紹。
+
+#### 建立 Promise
+
+```javascript
+var promise = new Promise((resolve, reject) => {
+  // 做一些非同步操作的事情，然後...
+  
+  if (/* 一切正常 */) {
+    resolve('Stuff worked!');
+  } else {
+    reject(Error('It broke'));
+  }
+});
+```
+
+Promise 建構式接受一個函數作為參數，它會傳遞給這個回呼函數兩個變數 resolve 和 reject，所以當你在回呼函數中完成一些非同步的操作後，如果成功就呼叫 resolve，否則就會呼叫 reject。所以回呼函數最後透過呼叫 resolve 與 reject 來確定 promise 的狀態。在呼叫 reject 的時候，按照慣例是會傳遞一個 Error 物件，但並非必須，這就跟 JavaScript 中的 throw 一樣。傳遞 Error 物件在 debug 的時候能夠讓你方便追蹤呼叫的 stack。
+
+#### Promise 的用法
+
+Promise 的 then 方法接受兩個參數，這兩個參數即為兩支回呼函數，當成功的時候呼叫第一個回呼函數，失敗的時候則呼叫另一個，兩個都是可選的，所以你可以只處理成功的情況或是失敗的情況。
+
+```javascript
+promise.then(
+  (result) => console.log(result), // "完美!" 
+  (err) => console.log(err)        // "出問題了"
+);
+```
+
+JavaScript Promise 的 API 會把任何包含有 then 方法的物件當作 "類 Promise" 的物件(thenable)，這些物件經過 `Promise.cast` 處理之後就和原生的 Promise 實例沒有任何區別了。所以如果你使用的是第三方的 Q 模組，返回一個 Q Promise，它跟原生 Promise 將會是相容的。
+
+接著，讓我們看一下要如何將一個 callback function 包裝成 Promise。
+
+```javascript
+var fs = require('fs');
+
+function readFile(filename) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(filename, (err, data) => {
+      if (err)
+        reject(err);
+      else
+        resolve(data);
+    });
+  });
+}
+
+readFile('/foo.txt').then((data) => console.log(data));
+```
+
+Promise 的 `.then()` 裡面如果又傳出另一個 Promise 物件，那麼 `then()` 就可以隨意地一直串連下去，像是下面那樣：
+
+```javascript
+doSomething().then((result) => {
+  console.log('第一個結果：' + result);
+  return 88;
+}).then((secondResult) => {
+  console.log('第二個結果：' + secondResult);
+  return 99;
+}).then((thirdResult) => {
+  console.log('第三個結果：' + thirdResult);
+  return 200;
+}).then((fourthResult) => {
+  // 一直下去...
+});
+```
+
+### Generator 是什麼?
+
+一般的函數，在開始執行後，就會一直執行到整個函數結束為止。Generator有別於一般的函數，它可以在函數執行到一半的時候暫停，然後再回復執行，在暫停的這段時間，可以先處理其他的事情。
+
+要暫停一個 generator function 必須在函數內部使用 `yield` 關鍵字，在函數外部是沒有辦法可以暫停 generator 的。暫停後要回復，則必須從外部呼叫 `next()` 方法來控制它回復，generator 本身沒有辦法自行回復。所以一個 generator 函數基本上可以一直重複的暫停又回復。以下為 generator 函數的宣告：
+
+```javascript
+
+```
