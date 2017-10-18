@@ -460,4 +460,110 @@ console.log(a.next(9));
 {value: undefined, done: true}
 ```
 
-這段程式碼在第一次呼叫 `gen()` 時會傳回一個 generator 物件。而 `next()` 會回傳一個 generator 產生的物件，包含 value 及 done 屬性。所以第一次呼叫 `next()` 方法時，程式碼執行到 yield 會暫停，然後函數會將 yield 右邊的 'foo' 字串作為 value 傳出
+這段程式碼在第一次呼叫 `gen()` 時會傳回一個 generator 物件。而 `next()` 會回傳一個 generator 產生的物件，包含 value 及 done 屬性。所以第一次呼叫 `next()` 方法時，程式碼執行到 yield 會暫停，然後函數會將 yield 右邊的 'foo' 字串作為 value 傳出，而 done 屬性是用來是用來表明 generator 函數的執行是否已經結束。
+
+除了把東西傳出來，generator 也可以像一般的函數一樣傳入參數。例如，第二次呼叫 `next()` 方法的時候一併傳入參數 9，這時候程式碼會繼續執行，並使用傳入的參數去取代原本 yield 的位置跟 1 相加。到這裡可能有點混亂，不過你可以將 yield 想成是要等別人傳入參數，在停下來等參數傳入的時候也可以傳東西出來。所以可以將 yield 這個關鍵字看成兩個步驟，**先傳東西出去**，**在等參數進來**，generator 雖然增加了非同步處理的方便性，但是使用上卻常常讓人感到些許的不方便與混淆，這時候我們就需要一些工具來幫我們更方便的使用 generator 函數。
+
+### co 是什麼？
+
+co([www.npmjs.com/package/co](https://www.npmjs.com/package/co))是一套由網路知名工程師tj所開發出來的一套工具，目的是解決我們在 Generator 函數中使用 yield 的困擾，使用 co 包裝起來的 Generator 函數會在使用 yield 出去的工作執行完畢之後自動往下執行，使用方法如下：
+
+首先，我們先在專案裡面將 co 安裝起來。
+
+```shell
+npm i co
+```
+
+接著撰寫程式碼：
+
+```javascript
+var co = require('co');
+
+co(function *myGenerator() {
+  yield function(done) {
+    setTimeout(function() {
+      console.log('Delay');
+      done();
+    },1000);
+  };
+  
+  console.log('done');
+});
+```
+
+結果：
+
+```shell
+'Delay'
+'done'
+```
+
+你會發現程式在delay完成之後，自動往下執行，顯示 done 的字樣；下面我們將需要中斷執行的函數拉出來，然後在generator函數裡面使用 yield 來呼叫：
+
+```javascript
+var co = require('co');
+
+function delay(done) {
+  setTimeout(function() {
+    console.log('Delay');
+    done();
+  }, 1000);
+}
+
+co(function *() {
+  yield delay;
+  yield delay;
+  yield delay;
+  
+  console.log('done');
+});
+```
+
+結果：
+
+```shell
+'Delay'
+'Delay'
+'Delay'
+'done'
+```
+
+你會發現程式會每一秒回傳一個 Delay 的字樣，並在全部結束後自動顯示 done；你甚至可以在呼叫的時候傳遞值進去函數裡面執行：
+
+```javascript
+var co = require('co');
+
+function delay(interval) {
+  console.log(interval);
+  return function(done) {
+    setTimeout(function() {
+      console.log('Delay');
+      done();
+    }, interval);
+  }
+}
+
+co(function *() {
+  yield delay(1000);
+  yield delay(2000);
+  yield delay(3000);
+  
+  console.log('done');
+});
+```
+
+結果：
+
+```shell
+1000
+'Delay'
+2000
+'Delay'
+3000
+'Delay'
+'done'
+```
+
+### async / await 是什麼？
+
+如果你覺得 co 模組來操作 Generator 函數很好用，你可以想像 async 異步函數就是原生的 co，幾乎是同樣的使用方式與概念，而且不再需要使用 generator 和 yield 這類的語法，因此撰寫上會變得簡潔很多。
