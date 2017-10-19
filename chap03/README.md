@@ -567,3 +567,64 @@ co(function *() {
 ### async / await 是什麼？
 
 如果你覺得 co 模組來操作 Generator 函數很好用，你可以想像 async 異步函數就是原生的 co，幾乎是同樣的使用方式與概念，而且不再需要使用 generator 和 yield 這類的語法，因此撰寫上會變得簡潔很多。
+
+async 異步函數是 ECMAScript 7 (ES7) 才支援的語法，目前 ES7 還沒有被大多數的 JavaScript Engine 支援，如果要使用的話，則需要用到 babel 這類的工具，先把此程式編譯轉換後才可以讓程式在舊版本的 JavaScript Engine上執行；但如果你是 Node.js 執行的話，好消息是 v7.6 以後的版本已開始支援 ES7。典型用法如下：
+
+```javascript
+var myFunction = async function () {
+  console.log('Hello! my first async function.');
+}
+myFunction(); // Hello! my first async function.
+```
+
+也可在定義函數的時候直接用上 async：
+
+```javascript
+async function myFunction() {
+  console.log('Hello! my first async function');
+}
+
+myFunction(); // Hello! my first async function.
+```
+
+如果覺得撰寫 function 很麻煩，我們可使用箭頭函數 (Arrow Function expression) 的方式撰寫，用法上與一般函數寫法一樣，呈現上卻更為簡潔：
+
+```javascript
+var myFunction = async() => {
+  console.log('Hello! my first async function');
+}
+
+myFunction(); // Hello! my first async function.
+```
+
+await 的用法跟「yield」大同小異，透過 await 程式可以跳出函數去執行，並等待非同步的工作(如：Promise)，省去了使用 callback 的問題，使用方法如下：
+
+```javascript
+var delay = new Promise((resolve, reject) => {
+  setTimeout(function() {
+    resolve('Delay');
+  }, 1000);
+});
+
+async function myFunction() {
+  try {
+    var val = await delay;
+  } catch (err){
+    console.log(err);
+  }
+  
+  console.log(val);
+  console.log('done');
+}
+
+myFunction();
+```
+
+結果：
+
+```shell
+'Delay'
+'done'
+```
+
+你會發現程式在 delay 完成之後，才會往下執行，顯示 done 的字樣，通常我們會搭配 `try catch` 來使用，以檢視錯誤發生時的狀況。
