@@ -1,7 +1,139 @@
+# Chap 04. React 起手式
 
+> JSX 基礎語法
+> Hello World，使用 CDN 安裝 React
+> DOM 特殊屬性
+> React 元件基礎類別
+> ReactDOM 類別
+> 訂製自己的 Hello World 元件
+> Props
+> PropTypes
+> 預設 Prop
+> State 與初始化
+> setState 與 render
+> Inline Style
+> Pure Components
+> Virtual DOM
+> 使用 JSX 與 Component 的好處
 
+## JSX 基礎語法
 
+HTML、CSS 與 JavaScript。在傳統的前端網頁開發模式，都會強調要將這三者分離，但我們是否也曾因為這三者的分離而感到困擾呢?
 
+React 不同於傳統的開發模式，它認為一切皆以元件 (Component) 為基礎，並將同一個元件的程式與資源封裝在一起。因此在設計 React 元件時，我們通常會使用 JSX 語法來使程式碼更加的簡潔。
+
+JSX 就像是在 JavaScript 中使用 XML 的語法，它能定義包含屬性的樹狀結構。由於瀏覽器並沒有支援 JSX，所以它必須透過轉譯器來轉譯成 JavaScript。
+
+### 使用 JSX 的優點
+
+#### 直覺
+
+既然 JSX 會透過轉譯器轉譯成 JavaScript，那為什麼不直接使用 JavaScript 就好了? 這是因為使用 JSX 可以讓程式碼看起來更加直覺。由於 JSX 是類似 XML 語法，所以對於比較沒有開發經驗的人來說更容易閱讀，下面的範例將比較有使用 JSX 和沒使用 JSX 的差異：
+
+不使用 JSX：
+
+```javascript
+React.createElement('div', {className: 'hello'}, 'Hello World');
+```
+
+使用 JSX：
+
+```javascript
+<div className="hello">Hello, World</div>;
+```
+
+#### 簡潔
+
+JSX 可以定義包含屬性的樹狀結構，來提供自定義的標籤，這可以讓程式碼變得更加簡潔且語意化，若我們使用 HTML 來表示簡易的表單，通常會是下面這樣表示：
+
+```html
+<div class="textBox">
+  <input type="text">
+  <input type="submit">
+</div>
+```
+
+而在 JSX 中，我們將標籤定義好後，就可以在程式中重複使用自定義標籤，如此一來程式碼就變得非常的簡潔：
+
+```javascript
+const TextBox = () => {
+  <div className="textBox">
+    <input type="text"/>
+    <input type="submit"/>
+  </div>
+};
+<TextBox>
+<TextBox>
+<TextBox>
+```
+
+#### 與原生 JavaScript 語法結合
+
+JSX 可以與 JavaScript 結合使用，透過 JavaScript 的力量，可以簡化許多繁雜的程式碼，也可以做出許多不一樣的變化。下面例子是透過 JavaScript 陣列的方法 map，來將陣列中的各個值已迭代的方式取出，並且將這些放入項目(li)標籤中來產生一個列表：
+
+```javascript
+var list = ['black tea', 'green tea', 'oolong'];
+
+function Menu() {
+  return (
+    <ul>
+      {
+        list.map(function(result) {
+          return (<li>{result}</li>);
+        })
+      }
+    </ul>
+  );
+}
+
+<Menu/>;
+```
+
+### JSX 基礎語法介紹
+
+看完 JSX 的優點後，我們接著來詳細介紹 JSX 的基礎語法。在這些基礎語法中，大家也許會發現 JSX 的許多語法都和 HTML 相似，如果已經具備基本 HTML 知識肯定會覺得很熟悉。
+
+#### 標籤
+
+一個網頁是由非常多的元件所組成，若想要在網頁上新增元件，只需要在程式碼中新增對應的標籤就可以了。JSX 支援大部分的 HTML 元件。
+
+```javascript
+<h1>Hello World!</h1>
+```
+
+我們還可以將 JSX 標籤指定給變數，且此變數可用於任何地方。在習慣上，當 JSX 標籤不只一行時，我們會用一個小括號把它包起來，這樣子程式碼會較為易讀：
+
+```javascript
+var hello = <h1>Hello World!</h1>;
+var welcome = (
+  <div>
+    <h1>Hello</h1>
+    <p>Welcome to React!</p>
+  </div>
+);
+```
+
+#### JavaScript 表達式
+
+JSX 最大的特點就是可以自由的與 JavaScript 結合使用，也因為這個特點，可以讓我們透過 JavaScript 的力量，創造更多可能。當我們想要在 JSX 中使用 JavaScript 的語法時，需要用一對大括號，將 JavaScript 的程式碼包在其中。
+
+```javascript
+var a = 1, b = 2;
+
+<div>{a + b}</div>
+```
+
+#### 屬性
+
+元件標籤內可以擁有任意數量的屬性，用來提供關於元件的訊息。一般來說屬性值要放在雙引號中，但也有例外，像是有些屬性是以 Boolean 表示，其屬性值就要用 JavaScript 表達式表示。
+
+這裡要注意的是，有些 JSX 標籤的屬性名會與 HTML 不同，像是在 JavaScript 中的 `class` 和 `for` 是保留關鍵字，所以在 JSX 要改用 `className` 和 `htmlFor`。
+
+```javascript
+<div className="buttonBox">
+  <input type="button" disabled={true}/>
+</div>
+```
 
 #### 事件
 
