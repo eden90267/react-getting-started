@@ -236,4 +236,56 @@ var helloStyle = {height: 150, width: 150, color: 'blue'};
 
 ## DOM 的特殊屬性
 
-在 React 中，所有的 DOM 屬性都是駝峰式，例如：HTML 的 maxlength 屬性在 React 中則以 maxLength 表示
+在 React 中，所有的 DOM 屬性都是駝峰式，例如：HTML 的 maxlength 屬性在 React 中則以 maxLength 表示。但是 aria-* 和 data-* 屬性則是用和 HTML 相同的表示方法，例如：data-toggle。
+
+在 React 和 HTML 之間，有數個屬性的用法和所使用的名稱有不同之處，接下來將會一一介紹這些屬性。
+
+### checked
+
+checked 屬性是由單選框 (checkbox) 或複選框 (radio) 的輸入元件 (input) 所支援。它可以用來設置該元件是否被選中。而 defaultChecked 是設置在首次插入元件時的初始值。
+
+```html
+<input type="radio" checked={true} />
+```
+
+### className
+
+由於 class 為 JavaScript 保留關鍵字，所以在 JSX 中以 className 取而代之。
+
+```javascript
+<div className='title'>Hello, world!</div>
+```
+
+### dangerouslySetInnerHtml
+
+一般來說，使用 InnerHtml 設置元件的 HTML 程式碼是有風險的，因為它會讓網頁有機會遭受到跨站指令碼 (Cross-site Scripting) 攻擊。所以 React 用 dangerouslySetInnerHTML屬性來取代 InnerHtml，好讓開發者提醒自己這樣做是有危險的。在使用時須傳入一個帶有 __html 屬性的物件，範例如下：
+
+```javascript
+<div dangerouslySetInnerHtml={{__html: 'Hello, world!'}} />
+```
+
+### htmlFor
+
+由於 for 為 JavaScript 保留關鍵字，所以在 JSX 中以 htmlFor 取而代之。
+
+```javascript
+<label htmlFor='name'>Enter your name:</label>
+```
+
+### onChange
+
+React的開發者認為，HTML 中的 onchange 事件對於瀏覽器中現有的行為是個誤稱，因此在 React 中， onChange 事件是用來即時處理使用者的輸入，也就是每當更改表單內容時，將會觸發 onChange 事件。
+
+```javascript
+<input type='radio' onChange={handleChanged} />
+```
+
+### selected
+
+selected屬性是由選項元件 (option) 所支援，它是用來設置是否選取到該元件。這在建構受控元件時很常用到。
+
+```javascript
+<option selected={false}>Apple</option>
+```
+
+### suppressContentEditableWarning
