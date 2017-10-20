@@ -1,19 +1,19 @@
 # Chap 04. React 起手式
 
-> JSX 基礎語法
-> Hello World，使用 CDN 安裝 React
-> DOM 特殊屬性
-> React 元件基礎類別
-> ReactDOM 類別
-> 訂製自己的 Hello World 元件
-> Props
-> PropTypes
-> 預設 Prop
-> State 與初始化
-> setState 與 render
-> Inline Style
-> Pure Components
-> Virtual DOM
+> JSX 基礎語法  
+> Hello World，使用 CDN 安裝 React  
+> DOM 特殊屬性  
+> React 元件基礎類別  
+> ReactDOM 類別  
+> 訂製自己的 Hello World 元件  
+> Props  
+> PropTypes  
+> 預設 Prop  
+> State 與初始化  
+> setState 與 render  
+> Inline Style  
+> Pure Components  
+> Virtual DOM  
 > 使用 JSX 與 Component 的好處
 
 ## JSX 基礎語法
