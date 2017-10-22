@@ -385,3 +385,113 @@ function Hello(props) {
 ```
 
 ## ReactDOM 類別
+
+在 React 中，當我們想要渲染元件或是取得真實的 DOM 做操作時，我們就要使用 ReactDOM。在 React 過去的版本中，這些功能本來是在 react 中的，但是為了使 React 能在更多不同的環境下更快速且更容易地建構，於是在 0.14版，React 就把 ReactDOM 從 react 的核心抽離，因此就分成 react 和 react-dom 兩個模組。
+
+下面將介紹 react-dom 模組提供了哪些功能。
+
+### render
+
+語法：
+
+`ReactDOM.render(element, container)`
+
+`ReactDOM.render` 是用來渲染 React 元素到指定的 DOM 節點，有了這樣的功能，我們才能把建立好的 React 元件顯示出來。
+
+`render()` 的第一個參數是欲渲染的 React 元素；第二個參數是欲插入元件的位置，它必須是一個 DOM 節點。如果成功將 React 元素渲染至 DOM，它將會回傳元件的參考 (ref)；如果是無狀態的元件則會回傳 null。
+
+若我們要將 React 元件渲染出來，就必須要先在 HTML 中開一個洞，這樣才能使用 `render()` 將元件插入。所以我們要先在 HTML 中建立一個 DOM 元素，並加上 id 屬性。
+
+```html
+<div id="app"></div>
+```
+
+接著就可以透過 `render()` 將元件渲染，其中的 DOM 節點可以透過 `document.getElementById` 方法來取得前面先建立好的 DOM。
+
+```javascript
+ReactDOM.render(
+  <h1>HellO, World!</h1>,
+  document.getElementById('app')
+);
+```
+
+### unmountComponentAtNode
+
+語法：
+
+`ReactDOM.unmountComponentAtNode(container)`
+
+React 有插入元件的功能，相反的也會有移除元件的功能，`ReactDOM.unmountComponentAtNode` 就是用來移除元件的方法，它可以移除一個已經插入到 DOM 的 React 元素，並切除對應的事件處理器和狀態。
+
+`unmountComponentAtNode()` 只需要一個參數，那就是欲移除 React 元素的 DOM 節點。如果節點中的 React 元素成功移除，則會回傳 true；如果節點中並沒有 React 元素，則不會做任何操作，並回傳 false。
+
+```javascript
+ReactDOM.unmountComponentAtNode(document.getElementById('app'));
+```
+
+### findDOMNode
+
+語法：
+
+`ReactDOM.findDOMNode(component)`
+
+若要取得真實的 DOM 節點，可使用 `ReactDOM.findDOMNode()` 來取得已經被掛載完成元件的真實節點，下面範例示範如何使用 findDOMNode() 取得真實節點：
+
+```javascript
+import {findDOMNode} from 'react-dom';
+
+class Hello extends React.Component {
+  componentDidMount() {
+    const e1 = findDOMNode(this);
+  }
+  render() {
+    return <h1>Hello, World</h1>
+  }
+}
+```
+
+## 訂製自己的 Hello World 元件
+
+1. 創造一個 app.js 檔案
+2. 在 app.js 定義一個 React 元件，然後將元件渲染到 DOM 節點
+
+  ```javascript
+  class Hello extends React.Component {
+    render() {
+      return <h1>Hello, World!</h1>;
+    }
+  }
+  
+  ReactDOM.render(
+    <Hello/>,
+    document.getElementById('app')
+  );
+  ```
+
+1. index.html 的腳本標籤將 app.js 讀取進來
+
+  ```html
+  <!doctype html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport"
+            content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+      <meta http-equiv="X-UA-Compatible" content="ie=edge">
+      <title>React!</title>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react-dom.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.38/browser.min.js"></script>
+  </head>
+  <body>
+  <div id="app"></div>
+  <script type="text/babel" src="./app.js"></script>
+  </body>
+  </html>
+  ```
+
+1. 瀏覽器上打開剛寫好的網頁，完成第一個 React 元件的應用程式
+
+## Props
+
+在 React 中，資料的傳遞統一都是由上而下，由父元件傳到各個子元件中，這是 React 單向資料流的概念，而傳遞的方法，則是透過 Props 這個屬性
