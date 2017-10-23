@@ -740,3 +740,66 @@ handleChange() 處理函數，讓 input 欄位中的文字可以即時更新。
 
 handleSubmit() 處理函數，先呼叫了 event.preventDefault() 方法，這是為了通知瀏覽器取消對事件的預設動作 (本例為提交表單)，接著將使用者點擊 Enter 時輸入色彩文字設置為 color 狀態，以更新文字的顏色。
 
+另外要附加說明的一點是，我們在呼叫 setState() 方法時，React 會將你投入的物件與原本的 this.state 狀態物件**合併**起來，而不是覆蓋過去。因此，我們在範例中設置 text 狀態只會更新到 state 物件的 text 欄位，color 欄位則不受影響。
+
+```javascript
+this.setState({
+  text: event.target.value
+});
+```
+
+看完了props 與 state 的介紹，可能會對使用方法和使用時機存在疑惑。簡單來說，state 與 props 的差別是：
+
+- props 屬性是由外部送進來的資料，是一個元件的**資料來源**
+- state 狀態則是由元件**自身所維護的資料**，掌管著與使用者的互動
+
+因此，在元件內部，我們通常會將 props 視為是不可變動的，props 一律要由外部準備好再傳送到元件內部，而 state 則是會經由外部的事件觸發改變，是可更動的，而且**只能經由元件本身去更動**。當然，你可以任意地使用 this.props 與 this.state 去組裝元件的視圖，像是將 props 的屬性成員指定給 state 作為初始 state：
+
+```javascript
+constructor(props, context) {
+  super(props, context);
+  
+  this.state = {
+    color: this.props.color,
+  };
+}
+```
+
+但是一般不建議這樣做，因為 props 的不可變與 state 的可變，意義是相互違背的。
+
+## Inline Style
+
+一般網頁的 MVC 架構，通常會鼓勵你將視圖與行為分離開來，我們稱為關注點分離。但是**到了 React**，**關注點就轉移到一個獨立的元件**，React 認為視圖的操作與行為邏輯要合併在一起，因此這些都會被封裝到單一個元件中。
+
+視圖當然也包含了樣式設置，你可以新增一個新的檔案，使用傳統的 CSS 樣式表為元件設置樣式，但是為了遵循 React 的精神，通常我們會使用 Inline Style 在元件內部就將樣式設置完成。
+
+在 React 元件中，Inline Style 就是一個 JavaScript 的物件，要傳遞這個到元件作為自訂樣式，只需要將它指定給元件的 style 屬性。Inline Style 物件中的每一個 CSS 特性名稱都是遵循舊有的名稱，但是改為駝峰式的命名方法，這是為了與傳統命名方式區隔開來，以下為簡單的範例：
+
+```javascript
+class Card extends React.Component {
+  render() {
+    const cardStyle = {
+      width: '250px',
+      height: '150px',
+      marginBottom: '20px',
+      backgroundColor: 'gray'
+    };
+    
+    return (
+      <div style={cardStyle}>It is a card.</div>
+    )
+  }
+}
+```
+
+## Pure Component
+
+若是一個 JavaScript 的函數被稱為 pure functions，代表對該函數輸入相同的參數，永遠會得到相同的輸出結果，就像這樣：
+
+```javascript
+function multi(x, y) {
+  return x * y;
+}
+```
+
+React 的 Pure Components 也是相同的概念，它指的是那些沒有內部 state 的元件，只接受外部傳入 props，並負責將那些 prop 呈現在視圖中，不做其他資料或狀態處理，而只是單純地去呈現元件的 UI 視圖，因此 Pure Component 通常又會稱為 Stateless Component，而Stateful Component 則是指一般具有內部 state 的元件。
