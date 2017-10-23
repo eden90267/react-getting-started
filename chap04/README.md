@@ -494,4 +494,249 @@ class Hello extends React.Component {
 
 ## Props
 
-在 React 中，資料的傳遞統一都是由上而下，由父元件傳到各個子元件中，這是 React 單向資料流的概念，而傳遞的方法，則是透過 Props 這個屬性
+在 React 中，資料的傳遞統一都是由上而下，由父元件傳到各個子元件中，這是 React 單向資料流的概念，而傳遞的方法，則是透過 Props 這個屬性，你可以將其視為**父子元件間溝通的橋樑**。因此，元件可接受外部傳入的 props 作為它的資料來源，渲染自身的視圖。若是父元件的某個 prop 發生變化，React 會向下遍歷整顆元件樹，去重新渲染所有使用到該 prop 的元件。
+
+在元件中，你可透過 `this.props` 來存取到 prop 的內容，下列為一個簡單的例子：
+
+```javascript
+class Greeting extends React.Component {
+  render() {
+    return <h1>Hello {this.props.name}</h1>;
+  }
+}
+```
+
+你可以在實例化時將 prop 傳入，如下列程式碼：
+
+```javascript
+ReactDOM.render(
+  <Greeting name="Amy" />,
+  document.getElementById('app')
+);
+```
+
+或是你也可以呼叫 `setProps()` 方法去設置元件的 prop，但是通常我們會直接將 prop 傳入，比較少會使用到 `setProps()` 方法去修改元件的 prop。這邊要注意的一點是，`setProps()` 方法只能在元件外使用。請記得，永遠不要在元件內部呼叫 `setProps()` 去修改自己的 prop，prop 在元件內部為不可變動的資料。
+
+前面我們提到過，prop 一律都是由父元件向下傳到子元件中，那若是子元件想要跟父元件溝通呢? 同樣是透過 props，父元件可透過 props 傳入一個回呼函數 (callback) 到子元件，那麼當**子元件 state 發生變化**，或是**有事件想要向上通知到父元件**時，就可以呼叫該回呼函數，如同下列程式碼：
+
+```javascript
+class AlertButton extends React.Component {
+  render() {
+    return (
+      <Button onClick={this.props.handleClick}>
+        Hello
+      </Button>
+    );
+  }
+}
+
+class App extends React.Component {
+  handleClick() {
+    alert('The button was pressed');
+  }
+  render() {
+    return <AlertButton handleClick={this.handleClick}/>
+  }
+}
+```
+
+## PropTypes
+
+當你的元件越來越複雜，prop 的**驗證**就變得十分重要，它可以確保你的元件正常運作，避免不必要的錯誤發生。
+
+當開始使用 PropTypes 來驗證我們的 Component 前，需要先了解 props 有哪些驗證方法可以使用，React 目前定義了 18 種 PropTypes 供開發者使用：
+
+| PropType                                                                             | 描述                                                                                |
+|:-------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------|
+| PropTypes.array                                                                      | 驗證 prop 是否為陣列                                                                |
+| PropTypes.bool                                                                       | 驗證 prop 是否為布林值                                                              |
+| PropTypes.func                                                                       | 驗證 prop 是否為函數                                                                |
+| PropTypes.func                                                                       | 驗證 prop 是否為函數                                                                |
+| PropTypes.number                                                                     | 驗證 prop 是否為數值                                                                |
+| PropTypes.object                                                                     | 驗證 prop 是否為物件                                                                |
+| PropTypes.string                                                                     | 驗證 prop 是否為字串                                                                |
+| PropTypes.symbol                                                                     | 驗證 prop 是否為符號                                                                |
+| PropTypes.node                                                                       | 驗證 prop 是否為任何可以被渲染的 (像是字串、數值或是一個 element)                   |
+| PropTypes.element                                                                    | 驗證 prop 是否為 React.element                                                      |
+| PropTypes.instanceOf(ClassName)                                                      | 驗證 prop 是否為 Class 的實例                                                       |
+| PropTypes.oneOf(['News', 'Photos'])                                                  | 驗證 prop 是否符合陣列中的其中一個值                                                |
+| PropTypes.oneOfType([PropTypes.string, PropTypes.number])                            | 驗證 prop 類型是否符合陣列中的其中一個 PropType                                     |
+| PropTypes.arrayOf(PropTypes.number)                                                  | 驗證 prop 是否為指定類型的陣列                                                      |
+| PropTypes.objectOf(PropTypes.number)                                                 | 驗證 prop 是否為物件且 prop 值類型皆符合傳入參數                                    |
+| PropTypes.shape({color: PropTypes.string, fontSize: PropTypes.number})               | 驗證 prop 是否為物件並符合傳入物件的類型 (與該 prop 值類型)                         |
+| PropTypes.[type].isRequired                                                          | 該 prop 為必要的且為指定 type 類型，type 用以指定 prop 的類型                       |
+| PropTypes.any.isRequired                                                             | 該 prop 為必要的且可為任何類型                                                      |
+| function(props, propName, componentName) {}                                          | 自定義類型檢查函數                                                                  |
+| PropTypes.arrayOf(function(propValue, key, componentName, location, propFullName){}) | 用於 arrayOf 與 objectOf 的自定義類型檢查函數，用以迭代並檢查陣列或物件中的每個元素 |
+
+在 React v15.5 版本前，React 提供了一個內建的 prop 驗證方法：`React.PropTypes`，但是在 v15.5 版本後，這個方法已經被棄用了，你必須改用 prop-types 模組 ([https://www.npmjs.com/package/prop-types](https://www.npmjs.com/package/prop-types))去幫助你驗證元件中各個 prop 的型別，以及是否為必要的，以下為簡單的範例：
+
+1. 先引入 prop-types 模組：
+
+```html
+<head>
+<meta charset="UTF-8">
+<!-- 略 -->
+<script src="https://unpkg.com/prop-types/prop-types.js"></script>
+</head>
+```
+
+2. 接下來進行型別驗證：
+
+```javascript
+class Greeting extends React.Component {
+  render() {
+    return <h1>Hello {this.props.name}</h1>;
+  }
+}
+
+Greeting.propTypes = {
+  name: PropTypes.string.isRequired,
+};
+```
+
+or 你可直接在元件內部宣告 propTypes 來定義 prop 型別：
+
+```javascript
+class Greeting extends React.Component {
+  static propTypes = {
+    name: PropTypes.string.isRequired
+  };
+  
+  render() {
+    return <h1>Hello {this.props.name}</h1>;
+  }
+}
+```
+
+上面範例中，propTypes 規範了 name 屬性接受字串值且為必要的，如果你的 prop 是選用，則不需要再設置 isRequired。若是傳入的 prop 沒有符合 propTypes 的規範，就會出現一個 console.warn 的警告。
+
+宣告 propTypes 為非必要的做法，因此你可以只規範一部分的 prop 定義，但是一般不建議這麼做，因為 propTypes 除了可以幫助你驗證 prop 資料，同時也具有元件屬性說明的隱含功能，使用者只要檢視 propTypes 的定義，就能了解元件有哪些 prop 可以使用，不需要再去詳閱 render() 函數的內容。
+
+## 預設 Prop
+
+React 提供你元件的 prop 設置一組預設值，特別是你在 prop 值未提供會毀壞你的元件時，你必須確保元件能夠正常運作。當然，你也可以寫一些防禦性的程式碼來避免它發生，但最好的方式是直接為它們指定預設值。
+
+設置 prop 預設值的方式就是為元件中的 defaultProps 屬性指定一個 Props 預設值，請注意，你只能為那些選用的 prop (也就是沒加上 isRequired 的) 指定預設值：
+
+```javascript
+class Profile extends React.Component {
+  static defaultProps = {
+    age: 0,
+    email: ''
+  };
+  static propTypes = {
+    name: PropTypes.string.isRequired,
+    age: PropTypes.number,
+    email: PropTypes.string,
+  };
+  
+  render() {
+    // ...
+  }
+}
+```
+
+## State 與初始化
+
+目前為止，你已經可以了解到元件如何利用 prop 接受外部資料，作為它的資料來源，但我們可發現到，只有 prop 的元件是非常靜態的，prop 一旦傳入，就決定了整個元件的視圖呈現，不會再發生改變。
+
+為了讓元件是具有可互動性的，React 為元件添加了狀態的概念，也就是 state，state 會根據使用者的操作發生變化，而 state 的變化，則會促使 React 去刷新整個元件的視圖結構。因此，元件就像是被賦予了生命，開始有自己的行為。
+
+不同於 prop，state 是元件本身自行維護的資料，因此，當你需要使用 state 時，你必須在元件的建構式中，去指定元件需要用到的 state，以及它們的初始值，為 this.state 賦予一個 state 物件就是在完成 state 的初始化，見下面範例：
+
+```javascript
+class ColorChanger extends React.Component {
+  constructor(props, context) {
+    super(props, context);
+    
+    this.state = {
+      text: '',
+      color: 'gray'
+    };
+  }
+  
+  handleChange() {
+    // ...
+  }
+  handleSubmit() {
+    // ...
+  }
+  render() {
+    // ...
+  }
+}
+```
+
+上面範例中，時做的事一個色彩轉換器，它會根據使用者輸入的顏色字串，去改變輸入文字的顏色，因此我們為元件設置了兩個 state，text 用於紀錄使用者輸入的文字，而 color 則是用於維護文字色彩。後續會繼續說明如何更新 state，並重新渲染元件，以達成更改文字顏色的功能。
+
+## setState 與 render
+
+在元件內部中，一律都是透過 `this.setState()` 方法去改變元件的，而不是直接更改 this.state 屬性，因為直接更改 this.state 屬性，React 會不知道該 state 發生改變，也不知道應該要幫你重新渲染元件，元件也就不可能更新為新的視圖樣貌。this.setState() 的使用方法就是將內含最新的 state 的物件投入該方法中，旨在通知 React 該元件的 state 發生改變，接著 React 會自動呼叫 render() 方法，去重新渲染元件，更新前端視圖。
+
+你可以將元件想像成是一個狀態機，你只需要將最新的 state 投入，React 會自動幫你的視圖更新為最新 state。也因此，使用者只需要將注意力放在資料的更新，不必再擔心視圖的調整與維護，因為那些工作 React 都在背後幫你完成了！
+
+接下來，我們要繼續實作前面的色彩轉換器範例，以說明 state 的變化是如何影響元件的視圖顯示。首先，我們先完成render() 方法，描繪出元件整體的視覺藍圖：
+
+```javascript
+class ColorChanager extends React.Component {
+  // ...略
+  render() {
+    return (
+      <div>
+        <form onSubmit={this.handleSubmit}>
+          <input type="text"
+                 onChange={this.handleChange}
+                 value={this.state.text}
+                 style={{color: this.state.color}}/>
+          <button>Enter </button>
+        </form>
+      </div>
+    );
+  }
+}
+```
+
+色彩轉換器就是由一個輸入欄位與按鈕組成的基本表單，在元件內部，你可以用 this.state 去存取元件的 state，並用這些資料去渲染元件本身，在本範例中，將 this.state.text 的 state 指定到輸入欄位的 value 是為了即時顯示使用者鍵入的文字，而將 this.state.color 指定到輸入欄位的 color 樣式則是為了動態改變文字顏色。
+
+接下來實作兩個事件處理器：handleSubmit() 與 handleChange()，分別指定至 onSubmit 與 onChange。
+
+```javascript
+class ColorChanger extends React.Component {
+  constructor(props, context) {
+     super(props, context);
+    
+     this.state = {
+       text: '',
+       color: 'gray'
+     };
+     
+     this.handleChange = this.handleChange.bind(this);
+     this.handleSubmit = this.handleSubmit.bind(this);
+  }
+  
+  handleChange(event) {
+    this.setState({
+      text: event.target.value
+    });
+  }
+  
+  handleSubmit(event) {
+    event.preventDefault();
+    this.setState({
+      color: this.state.text
+    });
+  }
+  
+  render() {
+    // ...
+  }
+}
+```
+
+React 的事件處理函數會接收到事件相關的物件，我們用 event 變數來代表它。
+
+handleChange() 處理函數，讓 input 欄位中的文字可以即時更新。
+
+handleSubmit() 處理函數，先呼叫了 event.preventDefault() 方法，這是為了通知瀏覽器取消對事件的預設動作 (本例為提交表單)，接著將使用者點擊 Enter 時輸入色彩文字設置為 color 狀態，以更新文字的顏色。
+

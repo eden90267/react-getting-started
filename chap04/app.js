@@ -1,10 +1,14 @@
-class Hello extends React.Component {
+class Greeting extends React.Component {
   render() {
-    return <h1>Hello, World!</h1>;
+    return <h1>Hello {this.props.name}</h1>;
   }
 }
 
+Greeting.propTypes = {
+  name: PropTypes.string.isRequired,
+};
+
 ReactDOM.render(
-  <Hello/>,
+  <Greeting name="World"/>,
   document.getElementById('app')
 );
