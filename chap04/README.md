@@ -802,4 +802,22 @@ function multi(x, y) {
 }
 ```
 
-React 的 Pure Components 也是相同的概念，它指的是那些沒有內部 state 的元件，只接受外部傳入 props，並負責將那些 prop 呈現在視圖中，不做其他資料或狀態處理，而只是單純地去呈現元件的 UI 視圖，因此 Pure Component 通常又會稱為 Stateless Component，而Stateful Component 則是指一般具有內部 state 的元件。
+React 的 Pure Components 也是相同的概念，它指的是那些沒有內部 state 的元件，只接受外部傳入 props，並負責將那些 prop 呈現在視圖中，不做其他資料或狀態處理，而只是單純地去呈現元件的 UI 視圖，因此 Pure Component 通常又會稱為 Stateless Component，而 Stateful Component 則是指一般具有內部 state 的元件。
+
+### 什麼時候會用到 Pure Components ？
+
+對於組建一個 React 的應用程式，較好的做法是，盡量保持下層元件為 Stateless，讓它們透過 props 來拿到資料，在上層元件 state 發生改變時，重新投入新的 prop 給它們，去渲染整顆元件樹，更新整個應用程式的前端視圖。
+
+也就是說，由父元件去管理 state 的邏輯，而子元件只要負責重繪頁面。因為若是讓 state 分散在應用程式中的各個組件，整個應用程式的 state 可能會變得難以追蹤，也降低了他們的可預測性。另外，讓元件保持 Stateless，除了可以提高元件的可重用性，也能夠提升程式碼的整體效能。
+
+### TodoApp 範例
+
+現在，我們用一個 TodoApp 範例來說明如何建立 Stateless 元件 (Pure Component)，並讓 TodoApp 最上層的富元件去管理整個應用程式的 state。Todo應用程式的元件階層關係如下：
+
+- Todo：主元件，提供使用者輸入待辦事項，並將它們顯示出來
+  - InputField：輸入欄位
+  - TodoList：代辦清單
+    - TodoItem：負責顯示一條待辦事項
+
+接下來，就開始來實作，先從最上層的 TodoApp 開始：
+
