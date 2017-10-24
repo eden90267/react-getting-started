@@ -821,3 +821,225 @@ React 的 Pure Components 也是相同的概念，它指的是那些沒有內部
 
 接下來，就開始來實作，先從最上層的 TodoApp 開始：
 
+```javascript
+class TodoApp extends React.Component {
+  render() {
+    return (
+      <div>
+        <h3>TODO</h3>
+        <InputField text=""/>
+        <TodoList items={[]}/>
+      </div>
+    )
+  }
+}
+```
+
+再來是InputField：
+
+```javascript
+class InputField extends React.Component {
+  render() {
+    return (
+      <form>
+        <input type="text" value={this.props.text}/>
+        <button>Add</button>
+      </form>
+    );
+  }
+}
+```
+
+TodoList：
+
+```javascript
+class TodoList extends React.Component {
+  render() {
+    let count = 0;
+    let todoItems = [];
+    this.props.items.forEach(function (item) {
+      count += 1;
+
+      todoItems.push(<TodoItem key={count} todoitem={item}/>)
+    });
+    return <div>{todoItems}</div>;
+  }
+}
+```
+
+接著是 TodoList 使用到的 TodoItem，它只單純負責顯示一條待辦事項：
+
+```javascript
+class TodoItem extends React.Component {
+  render() {
+    return <li>{this.props.todoitem}</li>;
+  }
+}
+```
+
+目前你所看到的 Todo 應用程式中所有的元件都是 Pure Component，它們只負責將接收到的 props 資料渲染到前端視圖中，因此整個應用程式目前還沒有任何行為。下一步，我們要將 state 注入 TodoApp 元件中，由它去管理整個應用程式的 state，另外，提供回呼函數給下層子元件，讓它們有機會通知 TodoApp 去改變 state：
+
+```javascript
+class TodoApp extends React.Component {
+  constructor() {
+    super(...arguments);
+
+    this.state = {
+      text: '',
+      items: []
+    };
+
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+    this.setState({
+      items: [
+        ...this.state.items,
+        this.state.text
+      ]
+    });
+  }
+
+  handleChange(event) {
+    this.setState({
+      text: event.target.value
+    });
+  }
+
+  render() {
+    return (
+      <div>
+        <h3>TODO</h3>
+        <InputField text={this.state.text}
+                    handleSubmit={this.handleSubmit}
+                    handleChange={this.handleChange}/>
+        <TodoList items={this.state.items}/>
+      </div>
+    )
+  }
+}
+```
+
+可以看到，我們在 TodoApp 實作了 handleSubmit 和 handleChange 兩隻處理函數，它們就是 state 改變的關鍵，為了保持底層的子元件為 Pure Components，我們要透過這些處理函數去接收底層的事件，並進一步更新整個應用程式的 state。接下來，我們要修改 InputField，將處理函數指定到輸入欄位的事件監聽器：
+
+```javascript
+class InputField extends React.Component {
+  render() {
+    return (
+      <form onSubmit={this.props.handleSubmit}>
+        <input value={this.props.text}
+               onChange={this.props.handleChange}/>
+        <button>Add</button>
+      </form>
+    );
+  }
+}
+```
+
+整個應用程式完畢了之後，你可以在瀏覽器上看到 TODO 標題和一個輸入待辦事項的輸入欄位，可將待辦事項一條一條輸入進去，可看到輸入的事項被條列到輸入欄位下面。
+
+你可以看到，整個應用程式中只有最上層的 TodoApp 為 Stateful 的元件，子元件 InputField、TodoList 與 TodoItem 都是保持 Pure，所有從下層引發的事件一律都是透過回呼函數往上通知到父元件，再統一由父元件重新渲染，將資料傳遞到底層的每個節點中，這種統一管理所有 state 的方法，讓整體 state 變得更容易維護了！
+
+## Virtual DOM
+
+在 React 中，你所建立的 DOM 節點，都是虛擬的，真實的 DOM 是由 React 幫你渲染之後，再掛到你的頁面上。
+
+### DOM 與 Virtual DOM
+
+DOM (Document Object Model，文件物件模型) 提供了文件結構化表示法。對於網頁開發者來說，文件就是 HTML 的程式碼，而 DOM 就是這份**在記憶體中的表示**，所有 HTML 的元素都會成為 DOM 中的節點。
+
+DOM 也提供了一些 API 讓你可以去遍歷和修改它的節點，像是 `getElementById()` 或是 `removeChild()`。所以，當你想要動態地改變網頁的內容時，可以像這樣修改 DOM：
+
+```javascript
+let fruitList = document.getElementById('fruit');
+let apple = document.getElementById('apple');
+
+fruitList.removeChild(apple);
+```
+
+DOM 的樹狀結構雖然讓你可以很方便地遍歷 DOM 下的所有節點，但是在操作真實的 DOM 卻是很消耗時間的。特別是現在的趨勢都是往單頁應用程式在發展(Single Page Application, SPA)，導致整個 DOM 樹是非常龐大的，而且經常需要隨著各式各樣不同的事件去修改它。這種情況下，你每一次操作 DOM，對應用程式來說都是很大的負擔。
+
+試想一種情況，假設今天有一個事件發生，那麼你會需要找出所有與事件相關的節點，並判斷是否更新該節點的內容。若在一般小型的應用程式，這可能不是什麼難事，但若是在一個 SPA 應用程式，可能有成千上萬個節點，同時又有許多事件和需要改變的地方，會需要花費非常多的時間與資源來處理這些事情，不但沒效率也不易於管理。
+
+正是因為傳統的方式無法有效率地處理這些事情，Virtual DOM 因此而誕生。Virtual DOM 就是 HTML DOM 的一層抽象，React 就是在記憶體中完整的複製一份 DOM 作為 Virtual DOM，它讓 React 可以在虛擬的世界去操作那些 DOM，這比起在操作真實的 DOM，快速且有效率的多。**操作虛擬 DOM 就好比是在編輯房子的藍圖**，**而不是去改變真實房子的房間格局或家具擺設**。
+
+### 如何建立 Virtual DOM
+
+React 提供了兩種方式讓你建立 Virtual DOM，一種是透過 React 提供的 JavaScript API 建立，另一種則是可以透過 JSX 語法，去描述你的 Virtual DOM。
+
+第一種作法，React 提供了一些 JS API，讓你去建立虛擬的 DOM 節點，因此你是用寫 JavaScript 程式碼的風格在建立整張 DOM，React 提供的 API 如下：
+
+- `createElement()`：建立並回傳一個 React 元素，API 的介面如下所示
+
+  ```javascript
+  React.createElement(type, [props], [...children]);
+  ```
+
+  - type：可為一個 HTML 標籤名稱 (像是 'div' 或 'span')，或是一個 React component 類型 (一個 class 或是一個 function)。
+  - props：該元素的屬性
+  - children：該元素的子節點
+
+  ```javascript
+  let child1 = React.createElement('li', {key: 'fruit01'}, 'Apple');
+  let child2 = React.createElement('li', {key: 'fruit02'}, 'Banana');
+  let list = React.createElement('ul', {className: 'fruit'}, [child1, child2]);
+  
+  ReactDOM.render(list, document.getElementById('app'));
+  ```
+
+- `createFactory()`：建立並回傳一個用於生產特定類型元素的工廠函數，API的介面如下所示。
+
+  ```javascript
+  React.createFactory(type)
+  ```
+
+  - type：可以為一個 HTML 標籤名稱 (像是 `div` 或 `span`)，或是一個 React component 類型 (一個 class 或是一個 function)
+
+  ```javascript
+  var liFactory = React.createFactory('li');
+  var child1 = liFactory({key: 'fruit01'}, 'Apple');
+  var child2 = liFactory({key: 'fruit02'}, 'Banana');
+  var list = React.createElement('ul', {className: 'fruit'}, [child1, child2]);
+  ReactDOM.render(list, document.getElementById('app'));
+  ```
+
+  建立虛擬 DOM 的另一種做法，就是使用我們前面介紹過的 JSX 語法，JSX 語法其實就是語法糖，**它將 React.createElement() 封裝成 HTML 的形式**，讓你感覺像是用 HTML 建立 DOM，但是其實它背後同樣是轉換成 JavaScript。
+
+  React 本身也推薦使用這種方式，它不但讓使用者用起來更直覺，另一方面，也讓你的程式碼更簡潔且更容易閱讀。
+
+  接下來同樣用 JSX 語法，去改寫前面的項目清單範例，讓你看看使用 React API 與使用 JSX 語法在建立虛擬 DOM 時的差異。
+
+  ```javascript
+  var root = <ul className="fruit">
+               <li key="fruit01">Apple</li>
+               <li key="fruit02">Banana</li>
+             </ul>;
+  ReactDOM.render(root, document.getElementById('app'));
+  ```
+
+### 如何渲染
+
+當一個 React Component 的 prop 或 state 發生改變時，React 是怎麼將它渲染到前端視圖的呢 ?
+
+React 採用的是單一資料流，每當資料發生改變時 (prop 或 state)，React 會將該資料從虛擬 DOM 的頂端投入，使用該資料去更新虛擬 DOM 下的每一個節點，重繪出一張新的 Virtual DOM，這就是我們所說的一律重繪原則。
+
+一律重繪原則聽起來很沒有效率，但是因為有 Virtual DOM 的存在，所有的操作都是在記憶體，而不是去操作真實的 DOM，效能上就提高了許多。至於 Virtual DOM 被重繪出來後，是怎麼改變真實的 DOM，將變化更新到前端 UI 上呢 ?
+
+React 內部的實作是去比較原先的 Virtual DOM 與更新後的 Virtual DOM，在經過 Diffing 演算法分析之後，找出真正發生變化的節點，再將這些變化更新到真實的 DOM 上，而不是重新渲染整張頁面，這種作法避免掉了對真實 DOM 不必要的操作，將更新的成本降到最低，同樣也帶來效能上的提升。
+
+### Diffing 演算法
+
+接下來要介紹的是 React 的 Diffing 演算法是如何計算出兩個 Virtual DOM 之間的最小差異，找到最小的轉換步驟，以實現最小化必要更新。
+
+在 Diffing 演算法中，React 會對兩個 DOM 樹進行分層比較，由最上層的根節點往下一層一層比較，演算法會根據節點的類型而有所不同。兩顆 DOM 樹只會針對同一層級的節點進行比較。
+
+![](https://i.imgur.com/1VRaZbi.png)
+
+一旦 React 發現節點已經不存在了，那麼它就會刪除該節點與其之下的所有節點，而不需要再進一步比較下面的子節點。下面以一個簡單的範例說明 React 對於節點跨層級的移動操作，是如何運作的。
+
+![](https://imgur.com/GwtFA43.png)
+
+一般我們的操作
