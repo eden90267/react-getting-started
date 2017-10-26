@@ -91,5 +91,200 @@ element.removeEventListener(event, function[, useCapture]);
 btn.removeEventListener('click', clickHandler2);
 ```
 
-我們現在對 DOM 的事件處理器附掛方式有了初步的了解。
+我們現在對 DOM 的事件處理器附掛方式有了初步的了解。接下來看一下當一個事件處理器被呼叫時，它將收到什麼參數。
 
+### DOM 的 event 物件
+
+每當一個事件觸發時，對應的事件處理器將會被呼叫，在呼叫處理器函數會伴隨傳入一個 event 物件。這個 event 物件的定義可以在 DOM 2 級規範 ([https://www.w3.org/TR/DOM-Level-2-Events/events.html](https://www.w3.org/TR/DOM-Level-2-Events/events.html)) 中找到。
+
+這個 event 物件帶有一些基本的屬性如 type、target、currentTarget、eventPhase，其中最常被使用的就屬 target 了。event.type 指明了事件的名稱、event.target 指向了觸發此事件的元素、event.currentTarget 指向了目前正在處理此事件的元素，而 event.eventPhase 則指出此事件正在何種階段中被處理。此外，event 物件還帶有 preventDefault 與 stopPropagation 方法，前者用於阻止預設行為，後者用於阻止事件的傳遞。對於不同類型的事件而言，例如滑鼠事件、鍵盤事件等，還有屬於它們各自專用的屬性，用以代表事件發生時元素的狀態，例如滑鼠事件的 altKey 屬性可以用來指示滑鼠事件發生時 alt 鍵是否也同時被按下。
+
+剛剛提到，event 是作為參數傳入事件處理器的。不過在 IE 中，event 物件是全域 window 物件的屬性，要獲取觸發此事件的**來源元素**則需要透過讀取 event.srcElement 來完成。因此對於不同瀏覽器，在事件處理方面會有相容性的問題。所以為了兼顧相容性，在事件處理器中要使用到 event 物件的程式碼，就會寫成像下面這樣：
+
+```javascript
+btn.onclick = function(event) {
+  event = event || window.event;
+  var src = event.target || event.srcElement;
+  // ... 略
+}
+```
+
+如此一來就能夠在不同的瀏覽器中使用同一份程式碼，但是看起來還是有點麻煩。所幸，React 已經幫我們照顧好了相容性問題，因此開發者使用 React 就可以很容易寫出跨瀏覽器的程式碼。
+
+### DOM 的事件流：事件冒泡與事件捕獲機制
+
+在這裡需要花點時間來了解它們是什麼，而第一步應該先看看什麼是 DOM 的事件流 (event flow)。
+
+W3C 在事件模型規範中對事件流的說明是：「事件流是一個在事件產生之後，於 DOM 樹狀模型中傳遞的過程。事件捕獲與事件冒泡機制，搭配幾種事件註冊技巧，讓事件能夠以幾種方式被處理。事件可以在事件來源的元素上被處理，又或者是在文件樹更頂層的地方被處理。」簡單來說，就是事件在發生之後的流動是從觸發事件的來源節點由內往外擴散，還是由文件最頂層從外往內收斂。
+
+由內往外擴散的方式是 IE 所提出的 DOM 實作，事件始自具體的節點，稱之為事件冒泡機制 (event bubbling)；從外往內收斂則是 Netscape 提出的 DOM 實作，事件始自於最不具體的節點 (文件的最頂層)，稱之為事件捕獲機制 (event capturing)。兩者的事件傳遞順序正好相反。在傳播過程所歷經的節點，如果也監聽了相同的事件，那麼那些節點上對應於該事件的處理器都將會被呼叫。
+
+現代的瀏覽器同時支援這兩種機制 (較舊的瀏覽器可能不支援事件捕獲)，我們在前面所看到的 addEventListener 方法可以透過 useCapture 這個選填參數來決定事件是由哪一種機制來處理。當事件自傳遞起總共會歷經三個階段，首先是事件捕獲階段 (capturing phase)，再來是目標階段 (target phase)，最後則是事件冒泡階段 (bubbling phase)。線圖是一個虛擬結構，說明了事件傳遞時將依序歷經的三個階段。
+
+![](https://imgur.com/4smtoUi.png)
+
+現在來看一個實際的例子，就可很快的了解事件捕獲與事件冒泡的意思了。
+
+```html
+<div id="top">
+  <div id="middle">
+    <button type="button" id="btn">
+      Click Me!
+    </button>
+  </div>
+</div>
+```
+
+我們將為這三個元素都掛上同一事件處理器，然後觀察按鈕被按下時他們的執行順序：
+
+```javascript
+var PHASE = ['', 'CAPTURING', 'AT_TARGET', 'BUBBLING'];
+
+function clickHandler(event) {
+  var eventName = event.type,
+    targetId = event.target.id,
+    currentTargetId = event.currentTarget.id,
+    phase = event.eventPhase,
+    text = "Event: " + eventName + ", Source: " + targetId + "\n" +
+      "Phase: " + PHASE[phase] + "\n" +
+      "Handler Executed at: " + currentTargetId;
+  alert(text);
+}
+
+var topDiv = document.getElementById('top'),
+  middleDiv = document.getElementById('middle'),
+  btn = document.getElementById('btn');
+
+topDiv.addEventListener('click', clickHandler);
+middleDiv.addEventListener('click', clickHandler);
+btn.addEventListener('click', clickHandler);
+```
+
+此範例在附掛事件處理器時，都使用了預設的冒泡機制，執行結果如下：
+
+```
+(1) Event: click, Source: btn
+    Phase: AT_TARGET
+    Handle Executed at: btn
+(2) Event: click, Source: btn
+    Phase: BUBBLING
+    Handle Executed at: middle
+(3) Event: click, Source: btn
+    Phase: BUBBLING
+    Handle Executed at: top
+```
+
+現在我們將最外層與中層的 <div> 改用捕獲機制來附掛事件處理器：
+
+```javascript
+topDiv.addEventListener('click', clickHandler, true);
+middleDiv.addEventListener('click', clickHandler, true);
+btn.addEventListener('click', clickHandler, true);
+```
+
+現在執行順序會像這樣：
+
+```
+(1) Event: click, Source: btn
+    Phase: CAPTURING
+    Handle Executed at: top
+(2) Event: click, Source: btn
+    Phase: CAPTURING
+    Handle Executed at: middle
+(3) Event: click, Source: btn
+    Phase: AT_TARGET
+    Handle Executed at: btn
+```
+
+再來僅將 middleDiv 改用捕獲模式
+
+```
+(1) Event: click, Source: btn
+    Phase: CAPTURING
+    Handle Executed at: middle
+(2) Event: click, Source: btn
+    Phase: AT_TARGET
+    Handle Executed at: btn
+(3) Event: click, Source: btn
+    Phase: BUBBLING
+    Handle Executed at: top
+```
+
+這裡要注意一點，呼叫 addEventListener 時，**使用捕獲機制與冒泡機制的事件處理器將會被維護在不同的陣列之中**，因此當我們呼叫 removeEventListener 時，如果是使用捕獲機制的事件處理器，則必須確實指定 useCapture 參數為 true。
+
+### 阻止事件傳遞
+
+前面我們已經看到事件傳遞所歷經的三個階段。如果我們想要阻止事件傳遞的話，可以使用事件的 stopPropagation 這支方法來達成目的。我們將上例做一點修改，將事件處理器都以冒泡機制註冊。
+
+```javascript
+btn.onclick = function(event) {
+  event = event || window.event;
+  var src = event.target || event.srcElement;
+  alert(src);
+  event.stopPropagation(); // 阻止事件冒泡
+}
+```
+
+如此一來即便上層元素監聽了同類事件，但事件在首次被執行後，便不會再繼續傳遞下去了。執行結果僅會有 btn 元素的事件處理器被觸發。
+
+這裡要注意的是，stopPropagation 可以用於阻止事件冒泡，而**不能阻止事件捕獲**。要阻止事件捕獲必須使用 DOM 3 級的 stopImmediatePropagation (同時阻止捕獲與冒泡)。
+
+對於阻止事件傳遞，一樣會遇到瀏覽器相容性的問題。在 IE 裡面 (IE 9 以下)，若想要阻止事件傳遞，必須透過設定 window.event 的 cancelBubble 屬性來實現。因此，兼具相容性的程式碼就應該要修改如下：
+
+```javascript
+btn.onclick = function(event) {
+  event = event || window.event;
+  var src = event.target || event.srcElement;
+  if (event.stopPropagation)
+    event.stopPropagation(); // 阻止事件冒泡
+  else
+    event.cancelBubble = true;
+}
+```
+
+### 取消預設的事件行為
+
+另外還有一支 API，用於阻止預設事件發生時的行為，就是 preventDefault() 方法，我們使用 Mozilla MDN 上面的例子來說明。假設我們在 HTML 中製作了一個輸入表單，我們希望限制只能輸入小寫字母，這可在 keypress 事件處理器中檢測使用者輸入的字元，如果該字元不屬於小寫字母，那麼就呼叫事件的 preventDefault() 方法來略過該字元：
+
+```html
+<form>
+  <input type="text" id="my-textbox">
+</form>
+```
+
+```javascript
+function checkName(event) {
+  var charCode = event.charCode;
+  if (charCode !== 0){
+    if (charCode < 97 || charCode > 122){
+      event.preventDefault();
+      alert('Please use lowercase letters only.' + '\n' + 'charCode: ' + charCode + '\n');
+    }
+  }
+}
+
+var myTextbox = document.getElementById('my-textbox');
+myTextbox.addEventListener('keypress', checkName, false);
+```
+
+對於取消事件的預設行為，同樣會遇到瀏覽器相容性的問題，在 IE 裡面是依靠設定 window.event 的 returnValue 屬性為 true 或 false 來實現的，所以兼具相容性的 checkName 函數程式碼應該修改成下面這樣：
+
+```javascript
+function checkName(event) {
+  var charCode = event.charCode;
+  if (charCode !== 0){
+    if (charCode < 97 || charCode > 122){
+      if (event.preventDefault)
+        event.preventDefault();
+      else
+        event.returnValue = true;
+      
+      alert('Please use lowercase letters only.' + '\n' + 'charCode: ' + charCode + '\n');
+    }
+  }
+}
+```
+
+如果處理相容性的程式碼一直重複出現，你可以自己將這些事情封裝成獨立的函數或模組，使用呼叫函數的方式來避免重複的程式碼。當然，有一些框架與函數庫幫開發者彌平了這種瀏覽器間相容性的問題，React 就是一個很好的例子。
+
+我們把 DOM 事件的基礎很快複習了一遍，總算要進入 React 的事件系統了，來看看 React 怎麼做的吧!

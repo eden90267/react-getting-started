@@ -8,13 +8,41 @@
     <title>DOM event</title>
 </head>
 <body>
-<button type="button" onclick="clickHandler()">
-    Click Me!
-</button>
+<div id="top">
+    <div id="middle">
+        <button type="button" id="btn">
+            Click Me!
+        </button>
+    </div>
+</div>
 <script>
-    function clickHandler() {
-      alert("I'm the button click handler.");
-    }
+  var PHASE = ['', 'CAPTURING', 'AT_TARGET', 'BUBBLING'];
+
+  function clickHandler(event) {
+    var eventName = event.type,
+      targetId = event.target.id,
+      currentTargetId = event.currentTarget.id,
+      phase = event.eventPhase,
+      text = "Event: " + eventName + ", Source: " + targetId + "\n" +
+        "Phase: " + PHASE[phase] + "\n" +
+        "Handler Executed at: " + currentTargetId;
+    alert(text);
+  }
+
+  var topDiv = document.getElementById('top'),
+    middleDiv = document.getElementById('middle'),
+    btn = document.getElementById('btn');
+
+  topDiv.addEventListener('click', clickHandler);
+  middleDiv.addEventListener('click', clickHandler);
+  btn.addEventListener('click', clickHandler);
+
+//  btn.onclick = function(event) {
+//    event = event || window.event;
+//    var src = event.target || event.srcElement;
+//    alert(src);
+//    event.stopPropagation(); // 阻止事件冒泡
+//  }
 </script>
 </body>
 </html>
