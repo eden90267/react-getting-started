@@ -456,3 +456,28 @@ class Greeting extends React.Component {
   }
 }
 ```
+
+#### 使用箭頭函數
+
+箭頭函數是 ES6 的語法，它不僅僅是函數的語法糖而已，而且還會**自動綁定到定義此函數作用域的 this**。我們在 `<button>` 的 onClick 指定了一個箭頭函數作為 callback，這個箭頭函數被呼叫時的上下文即元件本身，因此在它內部的 this.handleClick(event) 也會指向同樣的上下文：
+
+```javascript
+class Greeting extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {message: 'Hello World!'};
+  }
+  
+  handleClick() {
+    alert(this.state.message);
+  }
+  
+  render() {
+    return (
+      <button onClick={(event) => this.handleClick(event)}>
+         Try Me!
+       </button>
+    );
+  }
+}
+```
