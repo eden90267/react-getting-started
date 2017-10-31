@@ -481,3 +481,59 @@ class Greeting extends React.Component {
   }
 }
 ```
+
+在附掛事件處理器時使用箭頭函數會有個問題，那就是每次 Greeting 的實例在渲染時都會重新產生一個新的 callback。在多數的情況，影響並不算大。但是，若 callback 被當成 props 來傳遞給更內層的元件時。React 官方建議最好是直接在建構式中先做綁定，又或者使用下面的屬性初始化語法 (property initializer syntax) 來避免這樣的效能問題。
+
+#### 使用屬性初始化語法來綁定 this
+
+這裡我們使用仍處在實驗階段的屬性初始化語法，它的概念就是在撰寫元件方法時，直接使用箭頭函數來寫它。
+
+```javascript
+class Greeting extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {message: 'Hello World!'};
+  }
+  
+  handleClick = (e) => {
+    alert(this.state.message);
+  };
+  
+  render() {
+    render (
+      <button onClick={this.handleClick}>
+        Try Me!
+      </button>
+    );
+  }
+}
+```
+
+由於屬性初始化語法是 Babel 的實驗性語法，React 官方並不保證此方法未來能持續可用，這一點要請讀者在撰寫程式時自行衡量是否使用這個還未穩定的語法。
+
+### 合成事件物件
+
+前面我們談過了 React 的事件代理機制，React 在 DOM 結構的最頂層實作了一個事件監聽器做為代理，當事件發生時，由事件代理器負責將轉化後的 SyntheticEvent 物件分派給相應的事件處理器。
+
+SyntheticEvent 是 React 事件系統的一部分，它封裝了瀏覽器原生事件的部分子集，進而達到跨瀏覽器相容的效果。因為它是跨瀏覽器相容的，而且和原生事件有一樣的介面，因此你可以放心使用它而不需要再考慮程式碼是執行在何種瀏覽器上。此外，當你需要瀏覽器的原生事件，也能透過 SyntheticEvent 物件的 nativeEvent 屬性來存取到。
+
+每個 SyntheticEvent 物件具有以下屬性與方法，你可以在 React 的 SyntheticEvent.js (react/src/renders/shared/shared/event/SyntheticEvent.js) 原始碼看到它們。
+
+| (傳出)型別     | 屬性或方法名稱         |
+|:---------------|:-----------------------|
+| boolean        | bubbles                |
+| boolean        | cancelable             |
+| DOMEventTarget | currentTarget          |
+| boolean        | defaultPrevented       |
+| number         | eventPhase             |
+| boolean        | isTrusted              |
+| DOMEvent       | nativeEvent            |
+| string         | type                   |
+| void           | preventDefault()       |
+| boolean        | isDefaultPrevented()   |
+| void           | isStopPropagation()    |
+| boolean        | isPropagationStopped() |
+
+
+#### 支援的事件
+
