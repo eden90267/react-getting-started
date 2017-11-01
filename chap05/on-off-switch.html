@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>OnOffSwitch</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react-dom.min.js"></script>
+    <script src="https://unpkg.com/prop-types/prop-types.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.38/browser.min.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<script type="text/babel">
+  class OnOffSwitch extends React.Component {
+    constructor(props) {
+      super(props);
+      this.state = {isOn: true};
+
+      this.handleClick = this.handleClick.bind(this);
+    }
+
+    handleClick(event) {
+      this.setState(prevState => ({
+        isOn: !prevState.isOn
+      }));
+    }
+
+    render() {
+      return (
+              <button onClick={this.handleClick}>
+                {this.state.isOn ? 'ON' : 'OFF'}
+              </button>
+      );
+    }
+  }
+
+  ReactDOM.render(
+          <OnOffSwitch/>,
+    document.getElementById('app')
+  );
+</script>
+</body>
+</html>

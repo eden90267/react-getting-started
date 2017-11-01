@@ -650,3 +650,122 @@ class MyButton extends React.Component {
 這是由於 React 的事件系統實際上只是實現了冒泡機制 (因捕獲模式有擴瀏覽器相容的問題)，React 從底層獲取事件之後，於事件系統的抽象層次再安排內外層元素的事件處理器執行順序，以模擬的方式創造了類似於真實 DOM 的內外流邏輯。故使用 onClickCapture 所附掛的監聽器，它的執行階段也會是冒泡階段，但執行的順序會被往前調整 (模擬事件捕獲機制)。
 
 ### 阻止事件傳遞
+
+前面所述的阻止事件傳遞的方法，只需使用事件的 `stopPropagation()` 方法或是令 `window.event.cancelBubble` 為 true (IE 9 以下) 即可。由於 React 幫開發者照顧了跨瀏覽器相容性的問題，因此在 React 中一律使用合成事件的 `stopPropagation()` 方法即可 (在 React v0.14 版本之前，可以讓事件處理器傳回 false 來停止事件傳遞，但自 v0.14 版起，都必須手動顯式地呼叫合成事件的 `stopPropagation()` 方法才行)。
+
+```javascript
+class MyButton extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+  }
+  
+  handleClick(event) {
+    var currentTargetId = event.currentTarget.id;
+    
+    alert('click handler executed at ' + currentTargetId);
+    
+    event.stopPropagation();
+  }
+  
+  render() {
+    return (
+      <div id="top" onClick={this.handleClick}>
+        <div id="middle" onClick={this.handleClick}>
+          <button type="button" id="btn" onClick={this.handleClick}>Click Me!</button>
+        </div>
+      </div>
+    );
+  }
+}
+```
+
+### 取消預設的事件行為
+
+與 `stopPropagation()` 一樣，自 React v0.14 版本起，要取消預設的事件行為必須手動顯式地呼叫合成事件的 `preventDefault()` 方法，無法透過讓事件處理器傳回 false 來取消預設的事件行為。以下是個例子，在單純的 HTML 中，要阻止打開新頁面連結的預設行為：
+
+```html
+<a href="http://www.google.com" onclick="console.log('Link clicked.'); return false;">
+  Try Me
+</a>
+```
+
+在 React 中則是這樣做，簡單易懂：
+
+```javascript
+class MyButton extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+  }
+  
+  handleClick(event) {
+    alert('Link clicked.');
+    event.preventDefault();
+  }
+  
+  render() {
+    return (
+      <a href="http://www.google.com" onClick={this.handleClick}>
+        Try Me
+      </a>
+    )
+  }
+}
+```
+
+## 事件與狀態更新
+
+在 Web 應用程式中，視圖的狀態往往和使用者的操作有著密不可分的關係。由於使用者的操作經常是以觸發事件的方式來體現，因此在 React 中，事件與狀態更新的程式碼特別常見。之前已有類似的程式碼外，之後討論到表單，會一直看見這種模式，特別是受控元件的設計。
+
+底下我們用按鈕來模擬一個開關，這個 OnOffSwitch 元件會渲染出一個按鈕，讓使用者可在每次按下按鈕切換它的 ON 或 OFF 狀態。
+
+```javascript
+class OnOffSwitch extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {isOn: true};
+
+    this.handleClick = this.handleClick.bind(this);
+  }
+
+  handleClick(event) {
+    this.setState(prevState => ({
+      isOn: !prevState.isOn
+    }));
+  }
+
+  render() {
+    return (
+            <button onClick={this.handleClick}>
+              {this.state.isOn ? 'ON' : 'OFF'}
+            </button>
+    );
+  }
+}
+
+ReactDOM.render(
+        <OnOffSwitch/>,
+  document.getElementById('app')
+);
+```
+
+## 表單
+
+在 Web 應用程式開發之中，表單 (form) 是和使用者能夠進行互動的重要元素之一。特別是在需要使用者輸入的場合，例如輸入帳號、密碼來登入網站、送出一個留言、提交一篇部落格文章、進行一次搜尋引擎檢索等等，都需要透過表單來完成。在開始介紹 React 表單的特性之前，先看看表單元素包含哪些類型。
+
+| 元素                      | Props 中的表單元素值屬性 | 事件處理器 | 從合成事件物件取值   |
+|:--------------------------|:-------------------------|:-----------|:---------------------|
+| `<input type="text">`     | value="字串"             | onChange   | event.target.value   |
+| <textarea />              | value="字串"             | onChange   | event.target.value   |
+| <select>                  | value="字串"             | onChange   | event.target.value   |
+| <input type="radio" />    | checked=true or false    | onChange   | event.target.checked |
+| <input type="checkbox" /> | checked=true or false    | onChange   | event.target.checked |
+| <input type="button" />   | -                        | onClick    | event.target         |
+| <input type="submit" />   | -                        | onSubmit   | event.target         |
+
+上表的整理算是在 React 中使用表單的小總結。
+
+### 受控與未受控元件
+
+學習 React 表單之前，需要先了解什麼是 受控元件 (controlled components) 與 未受控元件 (uncontrolled components)。在 React 中，元件的
