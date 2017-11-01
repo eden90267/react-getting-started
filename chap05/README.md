@@ -768,4 +768,34 @@ ReactDOM.render(
 
 ### 受控與未受控元件
 
-學習 React 表單之前，需要先了解什麼是 受控元件 (controlled components) 與 未受控元件 (uncontrolled components)。在 React 中，元件的
+學習 React 表單之前，需要先了解什麼是 受控元件 (controlled components) 與 未受控元件 (uncontrolled components)。在 React 中，元件的視圖狀態是由元件的 props 與 state 所決定的，可以說資料決定了元件的狀態。
+
+顯然，和輸入資料有關的表單元件和其自身的狀態有著密不可分的關係。若表單的資料是由 React 的狀態變更機制所決定的話，那麼這個表單就是一個受控的元件；例如，當輸入資料發生變化時，透過元件的 `setState()` 以新的資料來引發表單重新渲染，並呈現表單的最新資料。簡單來說，**如果一個輸入表單的值是由 React 所控制的話，那麼它就是一個受控的元件**。以撰寫程式碼的角度來看，如果你是透過表單元素的 props 來設定表單的 value (或 checked) 屬性的話，那麼它就是一個受控的元件。
+
+反之，如果表單的資料是由 DOM 自身所維護的話，那麼這個表單就是一個未受控的元件 (不受 React 的機制控制)。對於未受控的元件而言，它的資料並非受元件自身的 state 或 props 所控制，通常需要透過 ref prop 從真實 DOM 找出其值。
+
+在 React 的世界裡，應用程式的狀態必須受到良好的管理，因此以受控的方式來製作表單，能夠有效避免用程式出現難以掌控的局部零碎狀態；這種做法保持了應用程式的可控性，也是 React 官方所推薦的表單元件製作方式。另一種使用未受控的做法，通常被認為是一種反模式；但也有一派開發者認為，到底要採用受控或未受控的模式來設計表單，端看開發上的需求來採取合適的做法即可，兩者並沒有好壞之分。
+
+#### 受控元件
+
+典型上，HTML 的 `<input>`、`<textarea>` 和 `<select>` 等表單元素會由 DOM 來維護他們自身的狀態，並且依據使用者的輸入來更新狀態。而在 React 中，典型上的元件會以 state 屬性來維護它自身的狀態，而且只能用 setState() 來更新狀態。當我們在 React 中將這兩個概念結合在一起，便可以讓 React 元件的狀態符合單一資料來源的原則 (single source of truth)。總結來說，一個輸入表單元素，如果它的值是由 React 所控制的話，就稱之為一個受控元件。
+
+一個受控表單的特徵是這樣的，它的 props 會接受一個 value 屬性來作為它的當前值，同時也會接受一個 callback 用來改變其值。這個 callback 通常是一個事件處理器，在偵測到輸入發生變化時，用來變更表單的狀態。下面是一個輸入表單元素的典型例子：
+
+```javascript
+<input type="text" value={someValue} onChange={handleChange}/>
+```
+
+因為事件處理器將會變更元件的狀態，所以表單的輸入值就必須要存活在元件的 state 之中 (或是存活在應用程式某個儲存 state 的地方)，儲存在 state 中的某個值，也恰好會是 props 的 value 屬性值。
+
+底下程式碼至一個比較完整的表單實作範例：
+
+```javascript
+class MyInputForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {text: ''};
+    this.handleTextChange = this.handleTextChange.bind(this);
+  }
+}
+```
