@@ -531,9 +531,122 @@ SyntheticEvent 是 React 事件系統的一部分，它封裝了瀏覽器原生�
 | string         | type                   |
 | void           | preventDefault()       |
 | boolean        | isDefaultPrevented()   |
-| void           | isStopPropagation()    |
+| void           | stopPropagation()    |
 | boolean        | isPropagationStopped() |
 
 
 #### 支援的事件
 
+React 將事件進行了正規化，所以在不同瀏覽器也使用了一致的事件屬性，事件處理器預設只會在事件的冒泡階段被觸發。如果想要在捕獲階段處理事件，可以在事件名稱之後加上Capture後綴來附掛事件處理器，例如將 onClick 為 onClickCapture 就可以在捕獲階段來處理點擊事件。
+
+React 所支援的事件實作可以在 React 原始碼的 /syntheticEvents (react/src/renderers/dom/shared/syntheticEvents/) 中找到。
+
+#### 事件池 (Event Pooling)
+
+為了提升效能，React 內部會將產生的 SyntheticEvent 實例放在一個物件池中管理，當某個合成事件物件不再被使用時 (在事件的處理器被執行完畢之後)，它的屬性都將會被設為 null，因此 SyntheticEvent 實例是一種會被淨空的物件 (nullified object)。這除了表示 SyntheticEvent 事件物件可以被重複使用之外，也意味著你絕對要避免使用非同步的方式來存取合成事件物件。因為當你在稍後存取它的時候，實例雖然還存在，但它的屬性可能都已經被重置了。看看以下例子：
+
+```javascript
+function onClick(event) {
+  console.log(event); // nullified object
+  alert(event.type);  // "click"
+  const eventType = event.type;
+  
+  setTimeout(function() {
+    alert(event.type); // null
+    alert(eventType);  // "click"
+  }, 0);
+  
+  // 不能正常工作，setState 是非同步方法
+  // 因此 this.state.clickEvent 指向的物件可能被淨空
+  this.setState({clickEvent: event});
+  // 雖然能存取到 event.type，但可能會得到 null，無法正常工作
+  this.setState({eventType: event.type});
+}
+```
+
+讓我們修改一下前面的 Hello World 的例子來試試看：
+
+```javascript
+class Greeting extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {message: 'Hello World!'};
+  }
+  
+  handleClick = (event) => {
+    alert(event.type); // "click"
+    const eventType = event.type;
+    
+    setTimeout(function() {
+      alert(event.type); // null
+      alert(eventType);  // "click"
+    }, 0);
+  };
+  
+  render() {
+    return (
+      <button onClick={this.handleClick}>
+        Try Me!
+      </button>
+    );
+  }
+}
+```
+
+如果你還是想要以非同步的方式來存取事件的屬性，那麼就應該要呼叫事件的 `event.persist()` 方法，這可以讓 React 把該合成事件物件從池子中移出來，好讓合成事件物件不被淨空，使用者程式碼可以保留指向該事件物件的參考，對它進行後續的存取。
+
+### 虛擬 DOM 的事件流：事件冒泡與事件捕獲機制
+
+React 的虛擬 DOM 也具有與真實 DOM 相同的事件冒泡與捕獲機制。預設，React 會在事件傳遞的冒泡階段觸發事件處理器，不過你也可讓 React 在捕獲階段來觸發事件處理器。使用一個被兩個 `<div>` 包裏住的 `<button>` 來測試一下 React 的冒泡機制。
+
+```javascript
+class MyButton extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+  }
+  
+  handleClick(event) {
+    var PHASE = ['', 'CAPTURING', 'AT_TARGET', 'BUBBLING'];
+    
+    var eventName = event.type,
+        targetId = event.target.id,
+        currentTargetId = event.currentTarget.id,
+        phase = event.eventPhase,
+        text = "Event: " + eventName + ", Source: " + targetId + "\n" + 
+               "Phase: " + PHASE[phase] + "\n" + 
+               "Handler Executed at: " + currentTargetId;
+    alert(text);
+  }
+  
+  render() {
+    return (
+      <div id="top" onClick={this.handleClick}>
+        <div id="middle" onClick={this.handleClick}>
+          <button type="button" id="btn" onClick={this.handleClick}>Click Me!</button>
+        </div>
+      </div>
+    )
+  }
+}
+```
+
+測試結果：
+
+```
+(1) Event: click, Source: btn
+    Phase: BUBBLING
+    Handle Executed at: btn
+(2) Event: click, Source: btn
+    Phase: BUBBLING
+    Handle Executed at: middle
+(3) Event: click, Source: btn
+    Phase: BUBBLING
+    Handle Executed at: top
+```
+
+特別注意 (1) 處，當 `<button>` 的事件處理器被觸發時，所處的階段是冒泡階段，而不是預想中的目標階段。
+
+這是由於 React 的事件系統實際上只是實現了冒泡機制 (因捕獲模式有擴瀏覽器相容的問題)，React 從底層獲取事件之後，於事件系統的抽象層次再安排內外層元素的事件處理器執行順序，以模擬的方式創造了類似於真實 DOM 的內外流邏輯。故使用 onClickCapture 所附掛的監聽器，它的執行階段也會是冒泡階段，但執行的順序會被往前調整 (模擬事件捕獲機制)。
+
+### 阻止事件傳遞
