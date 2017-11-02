@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>My Input Form (no control)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react-dom.min.js"></script>
+    <script src="https://unpkg.com/prop-types/prop-types.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.38/browser.min.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<script type="text/babel">
+    class MyInputForm extends React.Component {
+      constructor(props) {
+        super(props);
+
+        this.handleSubmit = this.handleSubmit.bind(this);
+      }
+
+      handleSubmit(event) {
+        alert("Text: " + this.textInput.value + " is submitted");
+        event.preventDefault();
+      }
+
+      render() {
+        return (
+          <div>
+              <form onSubmit={this.handleSubmit}>
+                  <label>
+                      Text:
+                      <input type="text"
+                             ref={(input) => this.textInput = input}/>
+                  </label>
+                  <input type="submit" value="Submit"/>
+              </form>
+          </div>
+        );
+      }
+    }
+
+    ReactDOM.render(
+            <MyInputForm/>,
+      document.getElementById('app')
+    );
+</script>
+</body>
+</html>

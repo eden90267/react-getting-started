@@ -797,5 +797,344 @@ class MyInputForm extends React.Component {
     this.state = {text: ''};
     this.handleTextChange = this.handleTextChange.bind(this);
   }
+  
+  handleTestChange(event) {
+    let text = event.target.value;
+    this.setState({text});
+  }
+  
+  render() {
+    return (
+      <div>
+        <input type="text" 
+               value={this.state.text} 
+               onChange={this.handleTextChange}/>
+      </div>
+    );
+  }
 }
 ```
+
+這樣表示表單的資料和視圖總是能夠保持同步，表單所顯示的值會在使用者輸入內容的時候隨之改變。
+
+這裡很清楚看到，一個受控元件每次的狀態變化都和一個事件處理函數有關。這使得要修改或驗證使用者的輸入變得很值觀，而且表單元件也能夠即時地對輸入做出反應，像是輸入資料的驗證、強制輸入資料格式等等。例如，若我們想要將輸入的 text 內容同步地轉換成大寫字母:
+
+```javascript
+handleTestChange(event) {
+  let text = event.target.value.toUpperCase();
+  this.setState({text});
+}
+```
+
+接下來我們將這個例子寫的完整一點，MyInputForm 的實例將渲染出一個 `<form>` 表單，讓使用者在按下表單提交的時候可以將他所輸入的 text 內容印出來。這裡運用 `<input type="submit">` 的輸入元素以及 `<form>` 的 onSubmit 屬性來指定提交事件的處理器。
+
+```javascript
+class MyInputForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {text: ''};
+
+    this.handleTextChange = this.handleTextChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleTextChange(event) {
+    let text = event.target.value;
+    this.setState({text});
+  }
+
+  handleSubmit(event) {
+    alert("Text: " + this.state.text + " is submitted");
+    event.preventDefault();
+  }
+
+  render() {
+    return (
+      <div>
+          <form onSubmit={this.handleSubmit}>
+              <label>
+                  Text:
+                  <input type="text"
+                         value={this.state.text}
+                         onChange={this.handleTextChange}/>
+              </label>
+              <input type="submit" value="Submit"/>
+          </form>
+      </div>
+    );
+  }
+}
+```
+
+#### 未受控元件
+
+對於 HTML 的 `<input>`、`<textarea>` 和 `<select>` 等表單元素，它們自身的狀態會由 DOM 來自動維護，因此 DOM 會自己記住你所輸入的東西。這裡同樣先以一個輸入元素為例：
+
+```javascript
+render() {
+  return <input type="text"/>;
+}
+```
+
+這段程式碼所渲染的僅僅是一個典型的 HTML 輸入表單元素。簡單來說，如果一個表單元素的 props 並未帶有 value 屬性 (或是 checked 屬性) 的話，那麼它就是一個未受控的元件。當你在瀏覽器中對它輸入值的時候，它所顯示的值也會隨著你的輸入而產生變化，它在 DOM 的層級維持了 source of truth。這表示，雖然畫面上的輸入值會隨著使用者輸入而改變，但如果我們在 React 的層級拿不到它的值，那麼一個未受控的元件就沒有什麼用處了。在 React 中，你可以透過 ref prop 取得元素在真實 DOM 裡的當前值。
+
+我們用上一節的程式碼作範例，只不過現在改用未受控的方式來撰寫表單元件：
+
+```javascript
+class MyInputForm extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleSubmit(event) {
+    alert("Text: " + this.textInput.value + " is submitted");
+    event.preventDefault();
+  }
+
+  render() {
+    return (
+      <div>
+          <form onSubmit={this.handleSubmit}>
+              <label>
+                  Text:
+                  <input type="text"
+                         ref={(input) => this.textInput = input}/>
+              </label>
+              <input type="submit" value="Submit"/>
+          </form>
+      </div>
+    );
+  }
+}
+```
+
+這個範例使用了未受控的方式所實作，達到的效果和受控的方式一樣。
+
+這裡要引起讀者注意的是，較早的 React 版本讓開發者可以為元件設定 ref 為字串，再從 this.refs 物件以此字串為鍵來索引出元件在 DOM 中的參照。不過這種方法存在一些缺陷，因此新版的 React 已經建議讓開發者改用如上面範例的回調式 ref 來處理元件在 DOM 的參照，並且宣布可能在為了的某個版本就會將字串式 ref 的支援給拿掉。所以此處就不再以字串式 ref 來撰寫範例了。
+
+未受控元件通常可以用在**不需要任何驗證**或**輸入控制**的表單之中。由於未受控元件在 DOM 維持了 source of truth，因此使用它可以讓某些需要整合 React 跟 non-React 程式碼的情況變得容易一些。雖然使用未受控元件來實作表單通常會有比較少的程式碼，因此製作起來會感覺比較快。但是使用未受控元件可能會帶來應用程式局部狀態的管理問題，因此在一般的情況下，React 官方建議都應該使用受控元件來製作表單。
+
+### Default Values
+
+對於受控的表單元件，其初始值只要透過初始的 state 來設定即可。而對於未受控的表單，你可能會想要讓 React 來指定它的初始值 (預設值)，然後將後續的更新動作交給未受控的行為來自動處理。對於這種情況，你可以在撰寫 React 程式碼時直接透過表單元件 props 的 defaultValue (或 defaultChecked) 屬性來指定預設值。
+
+```javascript
+render() {
+  return <input type="text" defaultValue="Hello World"/>;
+}
+```
+
+對於 `<input>` 的 checkbox 和 radio 類型而言，預設值可透過 props 的 defaultChecked 屬性加以設定。
+
+這裡要附帶說明一點，defaultValue 與 defaultChecked 只會在元件初次渲染時會使用到，後續的值就由未受控元件自身去管理了。對於受控元件而言，表單的初始值可在建構式中直接設定於 state 物件上 (ES5 寫法則透過 getInitialState 方法傳出初始 state 物件來完成)。
+
+### 受控與未受控元件的比較
+
+受控元件。受控元件將會涉及一個事件發生時的回呼函數 (事件處理器)，用以變更元件的狀態：
+
+```javascript
+<input type="text" 
+       value={this.state.text}
+       onChange={this.handleTextChange}/>
+```
+
+未受控元件：
+
+```javascript
+<input type="text"
+       defaultValue={this.state.text}
+       onChange={event => this.setState({text: event.target.value.toUpperCase()})}/>
+```
+
+雖然這個未受控的輸入表單元素的 defaultValue 使用了 this.state.text 來設定，但它只會在元件初次渲染的時候會使用到；另外，因為 props 不存在有 value 屬性，因此這個輸入元素的值將由 DOM 管理，而不由 React 來管理。所以，就算掛上了 onChange 事件處理器，也沒有辦法將輸入表單元素的值更改為大寫字串。
+
+至此，相信你對受控與未受控元件已經相當有感覺了。接下來看看 `<textarea />`、`<input type="radio" />`、`<input type="checkbox" />` 以及 `<select>` 這幾個表單元素。
+
+#### 文字框 `<textarea />`
+
+文字框 <textarea /> 元素是由它的 children 來決定文字內容的：
+
+```javascript
+<textarea>
+  You can put some text in a text area.
+</textarea>
+```
+
+這裡要請讀者注意的是，在 React 中 `<textarea>` 被改成更像 `<input />`，因此它的用法和 `<input type="text" />` 也很類似，同樣可以透過 props 的 value 屬性來表示表單元素的值。
+
+另外，textarea 標籤在沒有 children 的時候可以使用自閉合的語法 `<textarea />`。當 <textarea /> 做為未受控元件使用時，也可以利用 defaultValue 來為其設定設定值。由於 props 已有 value 或 defaultValue，因此當你使用它們來設定文字框的值時，就不應該再使用 children 了。
+
+```javascript
+class NameForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {value: 'input here'};
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleChange(event) {
+    let value = event.target.value;
+    this.setState({value});
+  }
+
+  handleSubmit(event) {
+    alert(`Your name was submitted: ${this.state.value}`);
+    event.preventDefault();
+  }
+
+  render() {
+    return (
+      <div>
+          <form onSubmit={this.handleSubmit}>
+              <label>
+                  Your Name:
+                  <textarea
+                          value={this.state.value}
+                          onChange={this.handleChange} />
+              </label>
+              <input type="submit" value="Submit"/>
+          </form>
+      </div>
+    );
+  }
+}
+```
+
+#### 單選按鈕 `<input type="radio">`
+
+radio 類型與 checkbox 類型的表單元素，value 值一般不會變化，主要是透過 props 的 checked 屬性 來表示選項的選取狀態。
+
+```javascript
+class MyRadioInput extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {radioValue: ''};
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleChange(event) {
+    let radioValue = event.target.value;
+    this.setState({radioValue});
+  }
+
+  render() {
+    return (
+            <div>
+                <label>boy:
+                    <input type="radio"
+                           value="boy"
+                           checked={this.state.radioValue === 'boy'}
+                           onChange={this.handleChange}/>
+                </label>
+                <label>girl:
+                    <input type="radio"
+                           value="girl"
+                           checked={this.state.radioValue === 'girl'}
+                           onChange={this.handleChange}/>
+                </label>
+            </div>
+    );
+  }
+}
+```
+
+#### 複選框 `<input type="checkbox">`
+
+```javascript
+class MyCheckboxInput extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {favFood: ['sandwich']};
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleChange(event) {
+    let {favFood} = this.state;
+    let {checked, value} = event.target;
+
+    if (checked && favFood.indexOf(value) === -1) {
+      favFood.push(value);
+    } else {
+      favFood = favFood.filter(item => item !== value);
+    }
+    
+    this.setState({favFood});
+  }
+
+  render() {
+    let {favFood} = this.state;
+    return (
+            <div>
+                <label>sandwich
+                    <input type="checkbox"
+                           value="sandwich"
+                           checked={favFood.indexOf('sandwich') !== -1}
+                           onChange={this.handleChange}/>
+                </label>
+                <label>rice
+                    <input type="checkbox"
+                           value="rice"
+                           checked={favFood.indexOf('rice') !== -1}
+                           onChange={this.handleChange}/>
+                </label>
+                <label>noodle
+                    <input type="checkbox"
+                           value="noodle"
+                           checked={favFood.indexOf('noodle') !== -1}
+                           onChange={this.handleChange}/>
+                </label>
+            </div>
+    );
+  }
+}
+```
+
+#### 下拉式選單 `<select>`
+
+一個典型的 HTML 下拉式選單看起來像下面這樣：
+
+```html
+<select>
+  <option value="apple">apple</option>
+  <option value="banana">Banana</option>
+  <option selected value="cherry">Cherry</option>
+  <option value="papaya">Papaya</option>
+</select>
+```
+
+HTML 的 `<select>` 元素有單選和複選兩種類型，這可以透過 multiple 屬性來加以設定：
+
+```html
+<select multiple>
+  <option value="apple">apple</option>
+  <option value="banana">Banana</option>
+  <option value="cherry">Cherry</option>
+  <option value="papaya">Papaya</option>
+</select>
+```
+
+在 React 中，同樣可以設定 `<select />` 元素 props 的 multiple 屬性來實現一個複選下拉式選單，例如 `<select multiple={true}>`。在說明 multiple 屬性之前，有件事情需要先請讀者留意，那就是 React 和 HTML 處理被選取選項方式有很明顯的不同。HTML 是使用 `<option>` 的 selected 屬性，而 React 則是使用 <select> 元素 props 的 value 屬性來表示被選取的選項。React 官方不建議使用 `<option>` 的 selected 屬性來指定被選取的選項 (但可以透過檢查一個 <option> 的 selected 屬性來確認它是否被選取)，若使用將會引發警告。
+
+```javascript
+<select value="B">
+  <option value="A">Apple</option>
+  <option value="B">Banana</option>
+  <option value="C">Cherry</option>
+</select>
+```
+
+複選：
+
+```javascript
+<select multiple={true} value={['B', 'C']}>
+  <option value="A">Apple</option>
+  <option value="B">Banana</option>
+  <option value="C">Cherry</option>
+</select>
+```
+
+接下來看單選和複選下拉式選單比較完整的範例。
