@@ -1138,3 +1138,210 @@ HTML 的 `<select>` 元素有單選和複選兩種類型，這可以透過 multi
 ```
 
 接下來看單選和複選下拉式選單比較完整的範例。
+
+#### 單選下拉式選單
+
+```javascript
+class FavFruitForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {value: 'cherry'};
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleChange(event) {
+    let value = event.target.value;
+    this.setState({value});
+  }
+
+  handleSubmit(event) {
+    alert('Your favorite fruit is ' + this.state.value);
+
+    event.preventDefault();
+  }
+
+  render() {
+    return (
+            <form onSubmit={this.handleSubmit}>
+                <label>
+                    Pick your favorite fruit:
+                    <select value={this.state.value} onChange={this.handleChange}>
+                        <option value="apple">Apple</option>
+                        <option value="banana">Banana</option>
+                        <option value="cherry">Cherry</option>
+                        <option value="papaya">Papaya</option>
+                    </select>
+                </label>
+                <input type="submit" value="Submit"/>
+            </form>
+    );
+  }
+}
+```
+
+#### 複選下拉式選單
+
+```javascript
+class FavFruitForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {value: ['cherry']};
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleChange(event) {
+    let value = [];
+    let sel = event.target;
+    for (let i = 0; i < sel.length; i++) {
+      let opt = sel.options[i];
+      if (opt.selected) {
+        value.push(opt.value);
+      }
+    }
+    this.setState({value});
+  }
+
+  handleSubmit(event) {
+    alert('Your favorite fruit are ' + this.state.value);
+
+    event.preventDefault();
+  }
+
+  render() {
+    return (
+            <form onSubmit={this.handleSubmit}>
+                <label>
+                    Pick your favorite fruit (s):
+                    <select multiple={true}
+                            value={this.state.value}
+                            onChange={this.handleChange}>
+                        <option value="apple">Apple</option>
+                        <option value="banana">Banana</option>
+                        <option value="cherry">Cherry</option>
+                        <option value="papaya">Papaya</option>
+                    </select>
+                </label>
+                <input type="submit" value="Submit"/>
+            </form>
+    );
+  }
+}
+```
+
+### 表單元素的 name 屬性
+
+在 HTML 裡，我們可以使用表單元素的 name 屬性來指定它的名稱或者用於選項的分組。在 React 中，因為受控表單元素的 value 已經儲存到了 state，因此要獲取表單的值所涉及的就是對 state 的存取，非常直觀。對於未受控的表單元素也可以透過 ref 由 DOM 取得它的值，因此也不見得需要借助於 name 屬性了。
+
+不過，如果使用了傳統的表單提交方式、使用未受控的方式來撰寫單選表單，又或者為了和某些第三方函數庫保持相容，那麼還是會有需要 name 的情況。
+
+另外一種需要 name 屬性的時機，是在同一個事件處理器中預處理多重輸入的時候。當你需要在一個事件處理器中來處理多個受控輸入元素的時候，可以為各個元素加上 name 屬性，讓事件處理器可以依據 event.target.name 來判斷應該要做什麼事，這是一種重用事件處理器的模式。以下範例出現兩個輸入表單，一個讓你勾選身上是不是有錢，另一個輸入可以讓你填入身上有多少錢。
+
+```javascript
+class Account extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      haveMoney: true,
+      howMuch: 100
+    };
+
+    this.handleInputChange = this.handleInputChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleInputChange(event) {
+    let partialState = {};
+    partialState[event.target.name] = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+    this.setState(partialState);
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+
+    if (!this.state.haveMoney)
+      alert('You have no money.');
+    else
+      alert('You have ' + this.state.howMuch + ' dollars.');
+  }
+
+
+  render() {
+    return (
+            <form onSubmit={this.handleSubmit}>
+                <label>
+                    Do ypu have money:
+                    <input name="haveMoney"
+                           type="checkbox"
+                           checked={this.state.haveMoney}
+                           onChange={this.handleInputChange}/>
+                </label>
+                <br/>
+                <label>
+                    How much:
+                    <input name="howMuch"
+                           type="number"
+                           value={this.state.howMuch}
+                           onChange={this.handleInputChange}/>
+                </label>
+                <input type="submit" value="Submit"/>
+            </form>
+    );
+  }
+}
+```
+
+對於這種模式，還有另外一種方式，那就是透過 bind 方法來完成：
+
+```javascript
+class Account extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      haveMoney: true,
+      howMuch: 100
+    };
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleInputChange(name, event) {
+    let partialState = {};
+    partialState[name] = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+    this.setState(partialState);
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+
+    if (!this.state.haveMoney)
+      alert('You have no money.');
+    else
+      alert('You have ' + this.state.howMuch + ' dollars.');
+  }
+
+
+  render() {
+    return (
+            <form onSubmit={this.handleSubmit}>
+                <label>
+                    Do ypu have money:
+                    <input type="checkbox"
+                           checked={this.state.haveMoney}
+                           onChange={this.handleInputChange.bind(this, 'haveMoney')}/>
+                </label>
+                <br/>
+                <label>
+                    How much:
+                    <input type="number"
+                           value={this.state.howMuch}
+                           onChange={this.handleInputChange.bind(this, 'howMuch')}/>
+                </label>
+                <input type="submit" value="Submit"/>
+            </form>
+    );
+  }
+}
+```
