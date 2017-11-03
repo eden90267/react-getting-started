@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Event Sample</title>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react-dom.min.js"></script>
+<script src="https://unpkg.com/prop-types/prop-types.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pubsub-js/1.5.7/pubsub.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.38/browser.min.js"></script>
+<script type="text/babel">
+  class Message extends React.Component {
+    constructor(props, context) {
+      super(props, context);
+
+      this.state = {
+        message: ''
+      };
+      this.handleChange = this.handleChange.bind(this);
+      this.handleSubmit = this.handleSubmit.bind(this);
+    }
+
+    handleChange(evt) {
+      let message = evt.target.value;
+      this.setState({message});
+    }
+
+    handleSubmit(evt) {
+      evt.preventDefault();
+      PubSub.publish('addMsg', this.state.message);
+    }
+
+    render() {
+      return (
+              <div>
+                  <form onSubmit={this.handleSubmit}>
+                      <input
+                              type="text"
+                              value={this.state.message}
+                              onChange={this.handleChange}/>
+                      <input type="submit" value="Submit"/>
+                  </form>
+              </div>
+      );
+    }
+  }
+
+  class MessageBox extends React.Component {
+    constructor(props, context) {
+      super(props, context);
+
+      this.state = {messages: []};
+    }
+
+    componentDidMount() {
+      this.token = PubSub.subscribe('addMsg', (context, msg) => {
+        console.log('1234');
+        this.state.messages.push(msg);
+        this.setState({messages: this.state.messages});
+      })
+    }
+
+    componentWillUnmount() {
+      PubSub.unsubscribe(this.token);
+    }
+
+    render() {
+      const msgField = this.state.messages.map((msg, i) => (
+              <p key={'msg' + i}>{msg}</p>
+      ));
+      return (
+              <div>
+                  <div>{msgField}</div>
+                  <p>Please enter a message</p>
+                  <Message/>
+              </div>
+      );
+    }
+  }
+
+  ReactDOM.render(
+          <MessageBox/>,
+    document.querySelector('#app')
+  );
+</script>
+</body>
+</html>
