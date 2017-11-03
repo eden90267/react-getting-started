@@ -622,3 +622,113 @@ class MessageBox extends React.Component {
   }
 }
 ```
+
+## Children
+
+在 JSX 表達式中，會包含有開始與結束標籤，在標籤中的內容，會被傳遞到 React 元件中一個特殊的 prop：`props.children`，因此，在父元件中可以透過這個 prop 去取得所有子元件的資料。
+
+元件中可能會包含一個、多個或者沒有子元件，props.children 的型別會依據你傳入的子元件而有所不同：
+
+```javascript
+<ParentComponent>Hello World</ParentComponent>
+```
+
+下面這個則是一個陣列：
+
+```javascript
+<ParentComponent>
+  <Children1 />
+  <Children2 />
+  <Children3 />
+</ParentComponent>
+```
+
+props.children 這個屬性提供了你一個更方便的管道——利用子元件去組成你的 UI 介面，舉例來說，假設我們現在有一個 CardBlock 元件，它允許使用者添加區塊之間的內容，如下列程式碼：
+
+```javascript
+class MyApp extends React.Component {
+  render() {
+    return (
+            <CardBlock>
+                <Card content="This is card A."/>
+                <Card content="This is card A."/>
+                <Card content="This is card A."/>
+            </CardBlock>
+    );
+  }
+}
+```
+
+CardBlock 可以利用 props.children 將所有子元件渲染出來，而不需要明確地知道開發者究竟傳入了什麼內容：
+
+```javascript
+class CardBlock extends React.Component {
+  render() {
+    return (
+            <div>
+              {this.props.children}
+            </div>
+    );
+  }
+}
+
+class Card extends React.Component {
+  render() {
+    const cardStyle = {
+      width: '50x',
+      height: '30px',
+      marginBottom: '20px',
+      backgroundColor: 'gray'
+    };
+    return (
+            <div style={cardStyle}>{this.props.content}</div>
+    );
+  }
+}
+```
+
+若沒有 this.props.children 的協助，你就必須透過額外的 prop 將那些內容傳入，這會讓你的程式碼變得非常醜陋且不優雅：
+
+```javascript
+<CardBlock content={<div><Card content="This is card A."/>
+                         <Card content="This is card A."/>
+                         <Card content="This is card A."/>
+                    </div>}>
+</CardBlock>
+```
+
+在某些情況下，你可能會想要將元件渲染之前對所有子元件做一些處理，譬如說為他們增加額外的屬性或是樣式，我們可以使用像是 map() 這種迭代函數去操作每一個子元件，但 this.props.children 會依據你的內容而有所不同，若開發者只有傳入一個子元件，那麼對它使用迭代函數就會發生錯誤。
+
+React 在 React.Children 下提供了一組工具函數來幫助開發者處理 this.props.children 資料結構，像是 React.Children.map()，在使用該函數迭代時，即使你的子元件只有一個，甚至沒有傳入，React.Children.map() 也不會丟錯，它會在背後為我們處理好檢查的這些事情。
+
+另外要介紹 React.cloneElement() 這隻函數，它是用來讓你修改或新增一些 props 到原有的元件中，該函數最後會返回一個新的元件，該元件中包含了原有的 props 與填入的新 prop。以剛剛 CardBlock 範例做說明，假設我們現在要迭代 Block 中的每一張 Card，並為它們加上文字顏色為紅色的樣式：
+
+```javascript
+class CardBlock extends React.Component {
+  render() {
+    const childrenWithNewStyle = React.Children.map(this.props.children, (child) => (
+      React.cloneElement(child, {fontColor: 'red'})
+    ));
+    return (
+            <div>
+              {childrenWithNewStyle}
+            </div>
+    );
+  }
+}
+
+class Card extends React.Component {
+  render() {
+    const cardStyle = {
+      width: '50x',
+      height: '30px',
+      marginBottom: '20px',
+      backgroundColor: 'gray',
+      color: this.props.fontColor,
+    };
+    return (
+            <div style={cardStyle}>{this.props.content}</div>
+    );
+  }
+}
+```
