@@ -732,3 +732,23 @@ class Card extends React.Component {
   }
 }
 ```
+
+## Refs
+
+當我們在呼叫 ReactDOM.render() 方法時，它會返回元件的實例，因此我們可以對該實例做一些操作：
+
+```javascript
+const myApp = ReactDOM.render(
+  <MyApp />,
+  document.getElementById('app')
+);
+myApp.doSomething();
+```
+
+然而，在元件內部，JSX 返回的**並不是一個實例**，它只是一個 ReactElement，用來描述元件應該呈現什麼視圖樣貌：
+
+```javascript
+const myAppElement = <MyApp />;
+```
+
+在典型的 React 資料流中，props 是父子元件互動的唯一媒介，要修改子元件，就必須在重新渲染時投入新的 props。然而，在某些特殊的情況下，你可能會需要操作到真正的元件實例，因此，React 提供了一個非常特殊的 prop：refs (reference)，你可以將它附加到任何元件上，refs 接受一個回呼函數，它會在元件被掛載完成 (mounted) 或卸載完成 (unmounted) 後立即執行。在掛載完成後，元件的參考會作為參數傳入回呼函數；卸載完成後則是傳入 null。
