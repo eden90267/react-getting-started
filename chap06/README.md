@@ -752,3 +752,112 @@ const myAppElement = <MyApp />;
 ```
 
 在典型的 React 資料流中，props 是父子元件互動的唯一媒介，要修改子元件，就必須在重新渲染時投入新的 props。然而，在某些特殊的情況下，你可能會需要操作到真正的元件實例，因此，React 提供了一個非常特殊的 prop：refs (reference)，你可以將它附加到任何元件上，refs 接受一個回呼函數，它會在元件被掛載完成 (mounted) 或卸載完成 (unmounted) 後立即執行。在掛載完成後，元件的參考會作為參數傳入回呼函數；卸載完成後則是傳入 null。
+
+### 添加 Ref 到 DOM 元素
+
+若是你將 ref 附加到 JSX 中的一個 HTML 的元素中，React 會將該元素的真實 DOM 節點作為參數傳入 ref 回呼函數中：
+
+```javascript
+class MyApp extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+  }
+  
+  handleClick() {
+    this.radioInput.checked = !this.radioInput.checked;
+  }
+  
+  render() {
+    return (
+      <div>
+        <input type="radio" ref={(input) => this.radioInput = input}/>
+        <button onClick={this.handleClick}> Toggle </button>
+      </div>
+    )
+  }
+}
+```
+
+### 添加 Ref 到 Class 元件
+
+當 ref 附加到一個自定義類別的元件，那麼你在回呼函數中接收到的就是該元件掛載完成後的實例，你可以呼叫該實例的方法去操作它，如下面這個例子：
+
+```javascript
+class MyApp extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+  }
+  
+  handleClick() {
+    this.radioInput.toggle();
+  }
+  
+  render() {
+    return (
+      <div>
+        <MyRadioInput ref={(input) => this.radioInput = input}/>
+        <button onClick={this.handleClick}> Toggle </button>
+      </div>
+    )
+  }
+}
+
+class MyRadioInput extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {checked: false};
+  }
+  
+  toggle() {
+    this.setState({checked: !this.state.checked});
+  }
+  
+  render() {
+    return <input type="radio" checked={this.state.checked}/>;
+  }
+}
+```
+
+這邊要注意的是，你**不能對函數式元件使用 ref**，因為他們並不會產生實例，但是你還是可以在函數式元件內部使用 ref，去參考到某個 DOM 節點。
+
+### 存取子元件之 DOM Refs
+
+上一小節中，我們看到可透過 ref 去拿到子元件的實例，但是在某些極少數的情況下，你可能會想要從父元件直接存取子元件的 DOM 節點，而不是實例，雖然一般不建議這樣做，因為這可能會破壞元件的封裝性，但在某些情況下，這種做法還是很有用處的。
+
+React 建議的做法是，由父元件去實作 ref 回呼函數，並透過任意的 prop (如 inputRef) 傳入子元件中，在子元件中，再將這個 prop 指定到要參考的 HTML 元素，因此，父元件就可以拿到該元素的 DOM 節點，做法如下列程式碼所示：
+
+```javascript
+class MyApp extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+  }
+  
+  handleClick() {
+    this.radioInput.checked = !this.radioInput.checked;
+  }
+  
+  render() {
+    return (
+      <div>
+        <MyRadioInput inputRef={(el) => this.radioInput = el}/>
+        <button onClick={this.handleClick}></button>
+      </div>
+    );
+  }
+}
+
+function MyRadioInput(props) {
+  return <input type="radio" ref={this.inputRef}/>
+}
+```
+
+這種做法就不限於子元件是自定義類別元件或是純函數元件，因為參考的是一個 JSX 的 HTML 元素，而不是一個元件。另外，正因為 props 可以層層傳遞，因此，父元件也可以去獲取好幾個階層以下的子元件內部的某個 DOM 節點，這也是這種做法所帶來的好處。
+
+前面有提到過，當元件被掛載或卸載後，都會呼叫回呼函數。因此，每當你的元件被更新時，回呼函數都會被呼叫兩次，因為更新時會先將原本的元件卸載下來，重新 render 並誕生出新的元件後，再將更新後的元件掛載上去，
+
+React 官方特別強調，不要濫用 ref，若是你發現你一直使用 ref 來完成你的功能，那麼可能要重新檢視整個應用程式的階層結構是否出現了什麼問題，並思考一下需要增加什麼 state 幫助你處理與控制資料，而不是一直使用 ref 去強制操作元件。
+
+如果你有使用過舊版的 React，你可能會對於將 ref 指定為字串的做法較為熟悉，例如：在某個 HTML 元素加上 ref="radioInput" 的 prop，然後透過 this.refs.radioInput 去存取該元素的 DOM 節點。建議替換為回呼函數的方式，因為 React 官方有提到，這種做法會在未來某個更新版本移除。
