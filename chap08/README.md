@@ -188,3 +188,14 @@ view/index.html
 
 </html>
 ```
+
+## Semantic UI 是什麼
+
+Semantic UI (semantic-ui.com/) 是一套開放原始碼的網頁前端模板，相較於 Bootstrap 來說，Semantic UI 比較少人認識，使用 Semantic UI 有以下幾個優點：
+
+- 樣式多元
+- 詳細介紹多種主流前端框架的引用方式
+- 具備多種動畫效果可供自由搭配
+- 多樣的版面配置方式：Grid System、Rail、Sticky
+- 提供多種 CSS Class，支援 RWD 多種需求：mobile only row、tablet reversed 等
+
