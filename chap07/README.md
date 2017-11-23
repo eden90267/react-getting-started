@@ -217,3 +217,18 @@ this.setState(function (prevState, props) {
 ```
 
 而開發者在呼叫 setState 方法時，可在第二個參數投入一個 callback，這個 callback 會在 setState 確實執行且元件也完成重新渲染之後被呼叫。通常，如果有什麼邏輯是需要在確認狀態完成變更後執行的話，官方建議將邏輯寫在 componentDidUpdate 方法之中，而不是寫在這個 callback 裏頭。
+
+### forceUpdate
+
+#### 原型
+
+component.forceUpdate(callback)
+
+#### 說明
+
+在大部分情況下，開發者在元件的 state 或 props 變化的時候引發元件的重新渲染。但有些時候，元件在渲染時所用到的資料可能既不是 state，也不屬於 props，又或者開發者就是想要強制再將元件渲染一次；這種特殊情況下，開發者可以呼叫 forceUpdate() 來告訴 React 這個元件需要重新渲染。正常來說，應該試著避免 forceUpdate() 的使用，請盡量使用一般的方式 (靠 state 和 props) 來試著重新渲染。
+
+執行 forceUpdate() 將會引發元件的 render 方法被執行，但會直接跳過執行元件的 shouldCmponentUpdate() 生命週期方法這一道程序，這很正常，都要強制更新了。但要注意，元件所屬的子元件當然也會一併執行重新渲染，但是子元件的重新渲染同樣會遵照一般的流程，所以每個元件的 shouldComponentUpdate 同樣會被執行。
+
+## State 與生命週期範例
+
