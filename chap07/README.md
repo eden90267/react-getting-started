@@ -232,3 +232,168 @@ component.forceUpdate(callback)
 
 ## State 與生命週期範例
 
+這裡援引 React 官網的例子並稍微修改一下來做說明。
+
+這裡我們撰寫一個 Clock 類別的 React 元件，然後在它的實例生命週期方法之中列出一些字串，方便觀察一個實例走過誕生期、存在期與消亡期的行為。
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>Clock</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.6.1/react-dom.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.38/browser.min.js"></script>
+  <script type="text/babel" src="all.js"/>
+</body>
+
+</html>
+```
+
+```javascript
+class Clock extends React.Component {
+  constructor(props, context) {
+    super(props, context);
+    this.state = {
+      date: new Date()
+    };
+  }
+
+  componentWillMount() {
+    console.log('[MOUNT] clock will mount.');
+  }
+
+  tick() {
+    this.setState({
+      date: new Date()
+    });
+  }
+
+  render() {
+    return (
+      <div>
+        <h2>Hi, {this.props.visitor}! 現在時間是: {this.state.date.toLocaleTimeString()}</h2>
+      </div>
+    )
+  }
+
+  componentDidMount() {
+    console.log('[MOUNT] clock did mount');
+    console.log('        > curent vistor: ' + this.props.visitor);
+    console.log('        > set a timer to tick every second.');
+    this.timeID = setInterval(() => this.tick(), 1000);
+  }
+
+  componentWillReceiveProps(nextProps, nextContext) {
+    console.log('[ALIVE] clock will receive props.');
+    console.log('        > next vistor: ' + nextProps.visitor);
+  }
+
+  shouldComponentUpdate() {
+    let shouldUpdate = true;
+    console.log('[ALIVE] clock should update?');
+    console.log('   > ' + shouldUpdate ? 'YES' : 'NO');
+
+    return true;
+  }
+
+  componentWillUpdate() {
+    console.log('[ALIVE] clock will update.');
+  }
+
+  componentDidUpdate() {
+    console.log('[ALIVE] clock did update.');
+    console.log('        > Tick-Tock!');
+  }
+
+  componentWillUnmount() {
+    console.log('[UNMOUNT] clock will unmount.');
+    clearInterval(this.timeID);
+    console.log('       > Timer is cleared.');
+  }
+}
+
+var Home = (<Clock visitor="John" />);
+
+ReactDOM.render(
+  Home,
+  document.getElementById('app')
+);
+
+setTimeout(() => {
+  Home = ( < Clock visitor = "Mary" / > );
+
+  ReactDOM.render(
+    Home,
+    document.getElementById('app')
+  );
+}, 3000);
+
+setTimeout(() => {
+  Home = (
+    <div>
+      <h2>Clock is gone</h2>
+    </div>
+  );
+  ReactDOM.render(
+    Home,
+    document.getElementById('app')
+  );
+}, 6000);
+```
+
+執行結果:
+
+```
+[MOUNT] clock will mount.
+[MOUNT] clock did mount
+        > curent vistor: John
+        > set a timer to tick every second.
+[ALIVE] clock should update?
+YES
+[ALIVE] clock will update.
+[ALIVE] clock did update.
+        > Tick-Tock!
+[ALIVE] clock should update?
+YES
+[ALIVE] clock will update.
+[ALIVE] clock did update.
+        > Tick-Tock!
+[ALIVE] clock should update?
+YES
+[ALIVE] clock will update.
+[ALIVE] clock did update.
+        > Tick-Tock!
+[ALIVE] clock will receive props.
+        > next vistor: Mary
+[ALIVE] clock should update?
+YES
+[ALIVE] clock will update.
+[ALIVE] clock did update.
+        > Tick-Tock!
+[ALIVE] clock should update?
+YES
+[ALIVE] clock will update.
+[ALIVE] clock did update.
+        > Tick-Tock!
+[ALIVE] clock should update?
+YES
+[ALIVE] clock will update.
+[ALIVE] clock did update.
+        > Tick-Tock!
+[ALIVE] clock should update?
+YES
+[ALIVE] clock will update.
+[ALIVE] clock did update.
+        > Tick-Tock!
+[UNMOUNT] clock will unmount.
+       > Timer is cleared.
+```
