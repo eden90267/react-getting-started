@@ -197,5 +197,57 @@ Semantic UI (semantic-ui.com/) 是一套開放原始碼的網頁前端模板，�
 - 詳細介紹多種主流前端框架的引用方式
 - 具備多種動畫效果可供自由搭配
 - 多樣的版面配置方式：Grid System、Rail、Sticky
-- 提供多種 CSS Class，支援 RWD 多種需求：mobile only row、tablet reversed 等
+- 提供多種 CSS Class，支援 RWD 多種需求：mobile only row、tablet reversed (在平板顯示時更動區塊順序) 等
 
+Semantic UI 有兩種安裝方式：CDN 與 npm
+
+### 使用 CDN 安裝 Semantic UI
+
+安裝 Semantic UI 最簡單方式就是直接使用 CDN：
+
+```html
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.9/semantic.min.css" />
+```
+
+這裡以按鈕為例：
+
+```html
+<button class="ui button">
+  Follow
+</button>
+```
+
+改寫成 React 方式：
+
+```js
+ReactDOM.render(
+  <button className="ui button">
+    Button
+  </button>,
+  document.getElementById('app')
+);
+```
+
+如果你想提升使用者體驗，我們也可以使用一點簡單的動畫效果：
+
+```javascript
+<div className="ui animated button" tabIndex="0">
+  <div className="visible content">Next</div>
+  <div className="hidden content">
+    <i className="right arrow icon"></i>
+  </div>
+</div>
+```
+
+我們甚至可以用 Semantic UI 提供的動畫效果，所有動畫效果我們都可以在官網上面的 transition 這個章節裡面找到!
+
+不過在開始撰寫動畫前，先載入 Semantic UI 的 JS 檔案：
+
+```html
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.9/semantic.min.js"></script>
+```
+
+Semantic UI v2.2.9 的 JS 對應 jQuery 版本為 v3.1.1。現在開始來我們第二個動畫效果：
+
+1. 先開一個新的 function 命名為 App
