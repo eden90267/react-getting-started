@@ -591,3 +591,197 @@ webpack
 
 ## koa 2 的基本操作
 
+以往 Node.js 的框架大多以 Express 為主，時至今日，由於 ECMAScript 7
+(ES7)
+做了很大的改進，尤其是非同步處理的部分，如果採用最新的語言標準直接進行設計，就可以解決許多舊有的問題，因此還在大量使用
+Callback 的 Express，也已經開始跟不上時代的腳步了，而這時大量使用
+ECMAScript 6 的 Generator 等新功能的 koa 就成了矚目的新星，而現在 koa 2
+可大膽使用 Async / Await 以及 ES7 的相關功能了，現在就讓我們來用 koa 2
+建立一個簡單的專案吧。
+
+1. npm 安裝 koa
+
+  ```shell
+  npm i koa
+  ```
+  在有 package.json 檔案的目錄下，新增一個 app.js 的檔案：
+
+  ```javascript
+  const Koa = require('koa');
+  const app = new Koa();
+  
+  app.use(ctx => {
+      ctx.body = 'Hello World';
+  });
+  
+  app.listen(3001, () => {
+      console.log('server starting on ' + 3001);
+  });
+  ```
+
+  再來使用 node.js 執行程式：
+
+  ```shell
+  node app.js
+  ```
+
+  可以修改 package.json 加入兩段設定：
+
+  ```json
+  "scripts": {
+    "start": "node app.js"
+  },
+  "engines": {
+    "node": "7.6"
+  },
+  ```
+
+  之後使用 npm  啟動 server
+
+  ```shell
+  npm run start
+  ```
+
+2. 設定路由 (Router)，這裡使用 koa-router 來實作 koa 路由:
+
+  ```shell
+  npm i koa-router -S
+  ```
+
+  安裝完成可使用
+
+  ```shell
+  npm list koa-router
+  ```
+
+  來檢查安裝的版本，接著打開 app.js 來設定一些簡單的路由：
+
+  ```javascript
+  const Router = require('koa-router');
+  var router = new Router();
+  ```
+
+  先引入 koa-router，接著 new 一個 Router
+  函數出來，最後是設定路徑，這裡有一些基本的 RESTful API
+  的概念，簡單的解釋就是我們可以透過 HTTP 通訊協定的命令與狀態，來實現資料的處理和交換等行為，基本的方法如：
+
+  - GET：讀取
+  - POST：新增
+  - PUT：更新
+  - DELETE：刪除
+
+  我們只顯示頁面，所以只要使用 get 就能達到我們目的了：
+
+  ```javascript
+  router.get('/', async (ctx, next) => {
+    ctx.body = 'this is index page';
+  });
+  
+  app.use(router.routes());
+  ```
+
+  如果要設定其他路徑只要依樣畫葫蘆就好：
+
+  ```javascript
+  router.get('/react', async (ctx, next) => {
+    ctx.body = 'this is react page';
+  });
+  ```
+
+  理解了路由的基本操作後，我們就可以開始渲染前端的 React
+  頁面囉！這邊我們選用 pug 和 koa-views 來渲染頁面。pug 是一套 JavaScript
+  框架引擎，使用框架引擎可以讓我們輕鬆規劃和渲染頁面內容，例如 HTML DOM
+  的基本設定通常是不太需要更動的，但是每個頁面又需要用到，這時候我們就會使用框架引擎來幫助我們管理頁面的配置
+  (layout)，koa-views
+  是幫助我們在後端啟用框架引擎渲染頁面的一套工具，它支援的引擎相當多樣，除了我們這邊會用到的
+  pug 外還支援 atpl、jazz、jade、nunjucks 等。現在就先安裝 pug 與 koa-view
+  吧！
+
+  ```shell
+  npm i pug koa-views -S
+  ```
+
+  我們預設 pug 檔案都會放在 views
+  的資料夾，然後設定網址在首頁的時候會去讀取檔案 index.pug 來做渲染
+  (因為上面已經有設定 extension 為 pug
+  檔了，所以這邊副檔名可以省略)，然後我們回到 app.js 目錄下建立一個 views
+  的資料夾，在裡面建立 index.pug 和 layout.pug 兩個檔案。
+
+  layout.pug：
+
+  ```jade
+  doctype html
+  html
+    head
+      title React
+      link(href='//cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.9/semantic.min.css', media='all', rel='stylesheet', type='text/css')
+      script(type='text/javascript', src='/assets/vendors.js')
+  
+      block head
+    body
+      block body
+  ```
+
+  block head 和 block body
+ 的語法是讓你可以在其他檔案編輯客製化的地方，我們打開
+ index.pug，接著撰寫首頁內容。
+
+  ```jade
+  extends layout
+  
+  block body
+    #app
+  
+    script(type='text/javascript', src='/assets/bundle.js')
+  ```
+
+  extends layout 是當我們渲染 index.pug 的時候同時將 layout.pug 展開，這樣我們就可以在每個頁面當中載入相同 HTML DOM 的設定，block body 就是剛剛提到每個頁面客製化的地方 (延續 layout.pug 的 block body)。
+
+3. 設定通用路徑，在 koa 當中我們可以設定一個通用的路徑來引導程式去使用相應的檔案，這樣每段路徑設定的時候，我們就可以不用一直去檢查相對路徑應該要怎走，例如我們前面寫到的：
+
+  ```jade
+  src='/assets/bundle.js'
+  ```
+
+  這段路徑設定我們已經把前面的敘述省略掉了，因此我們需要回到 app.js 將前面的敘述設定起來，這邊會用到另外兩個工具 koa-static 和 koa-convert，koa-static 是一個我們在引入 js 檔案的時候，常會用到的一個路徑設定工具，koa-convert 是幫忙處理 koa 之間的版本問題，因為我們在使用 koa 2 的時候，有些套件目前還沒有辦法支援到 koa 2，因此就需要 koa-convert 來幫忙解決，兩個工具的安裝和語法如下：
+
+  ```shell
+  npm i koa-static koa-convert -S
+  ```
+
+  接著設定通用路徑，app.js：
+
+  ```javascript
+  const path = require('path');
+  const convert = require('koa-convert');
+  const serve = require('koa-static');
+
+  app.use(convert(serve(path.join(__dirname, 'public'))));
+  ```
+
+  這樣任何檔案在引入的時候就會去根目錄裡面的 public 找檔案。
+
+4. 撰寫 React 程式，回到 app.js 的目錄底下新增一個名為 src 的資料夾，裡面新增一個名為 app.jsx 的檔案：
+
+  ```javascript
+  import React from 'react';
+  import ReactDOM from 'react-dom';
+  import createReactClass from 'create-react-class';
+  
+  const App = createReactClass({
+    render: function () {
+      return (
+          <div>
+            <h1>Hello React !!</h1>
+          </div>
+      );
+    }
+  });
+  
+  ReactDOM.render(
+      <App/>,
+      document.getElementById('app')
+  );
+  ```
+
+5. 撰寫 webpack.config.js，內容與上一節範例相同 (要注意 entry 的部分)，可將上一個範例檔案複製過來，並用 webpack 指令進行編譯再啟動 server 就完成了!
