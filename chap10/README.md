@@ -63,7 +63,40 @@ Redux 是根據 Flux 架構延伸的實作，它希望提供一個**可以預測
 
 這裡敘述 Redux 與 Flux 最重要的四點不同之處：
 
-- 增加 Reducer
-- 刪除 Dispatcher
+- 增加歸納器 (Reducer)
+
+  在 Redux 中，當我們要讓 store 中的 state 依照 action
+  來改變時，必須要透過 reducer，它需要傳入當前的 state 與
+  action，接著根據開發者設計的邏輯，回傳新的 state，簡單來說 reducer
+  的工作就是在決定當發生行為時，應用程式的 state 該如何去做改變。
+
+- 刪除分派器 (Dispatcher)
+
+  Redux 沒有 dispatcher 的概念，取而代之將 action 分配的工作交給 store
+  來做，因此我們可以在元件中直接呼叫 store 的分派方法，來將 action
+  分配給 store。
+
 - 單一資料源
+
+Flux架構中會有許多儲存不同狀態的 store，但 Redux 的應用程式只用一個
+store，並將所有狀態儲存在一個物件中。如果想要把資料處理邏輯拆分，可以設計多個
+reducer，並將他們組合起來，而不是使用多個 store。
+
 - 用回呼函數取代事件發射
+
+  當 store 中的 state 改變時，Redux 的 store
+  並不會發射改變事件，而是呼叫元件透過訂閱方法所傳入的回呼函數
+
+這裡一樣用一個 Todo list 做例子：
+
+1. 當使用者透過 view 元件新增一個代辦事項，此時就會產生一個
+   action，並透過 store 的分派方法，將包含新增代辦事項類別與資料傳遞給 store
+2. store 接收到 action 後，會將當前 state 與 action 傳遞給
+   reducer，reducer 就會根據開發者設計的邏輯行為回傳新的 state 給 store
+3. 接著 store 利用 reducer 所回傳的 state，取代 store 原先的
+   state，並且呼叫所有元件訂閱的回呼函數
+4. 元件在訂閱方法的回呼函數中，透過 store 提供的方法取得 store 新的
+   state，並根據 store 新的 state 來改變元件中的
+   state，讓元件重新渲染，此時 view 中就會出現使用者所新增的代辦事項
+
+以上就是 Redux 應用中一次完整的資料傳遞
