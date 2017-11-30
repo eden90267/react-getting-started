@@ -99,4 +99,15 @@ reducer，並將他們組合起來，而不是使用多個 store。
    state，並根據 store 新的 state 來改變元件中的
    state，讓元件重新渲染，此時 view 中就會出現使用者所新增的代辦事項
 
-以上就是 Redux 應用中一次完整的資料傳遞
+以上就是 Redux
+應用中一次完整的資料傳遞。根據上面例子，我們可以整理出簡單的 Redux 流程圖：
+
+![](https://imgur.com/OZBouIo.png)
+
+Redux 架構實作起來相較於 Flux 架構簡單許多，要完成一個 Redux 的應用程式，你只需要做好以下三件事：
+
+- 定義 Action
+- 設計 Reducer
+- 實作 Store
+
+## Redux 安裝與使用
