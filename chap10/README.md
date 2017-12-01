@@ -111,3 +111,47 @@ Redux 架構實作起來相較於 Flux 架構簡單許多，要完成一個 Redu
 - 實作 Store
 
 ## Redux 安裝與使用
+
+我們根據第 9 章節介紹的步驟來建置環境，實作範例在此：[https://github.com/eden90267/redux-todolist](https://github.com/eden90267/redux-todolist)
+
+```shell
+npm i redux -S
+```
+
+這裡介紹 redux 模組提供了哪些 API 給開發者使用：
+
+### createStore(reducer, [preloadedState], [enhancer])
+
+createStore 是用來產生 Redux 應用程式中的 store，createStore() 第一個參數要傳入開發者所設計好的 reducer，若是有多個 reducer，則需要使用 combineReducers() 將 reducer 組合後再傳入；第二參數可以選擇是否傳入預設載入的 state；第三個參數可選擇第三方功能來增強應用程式的功能，例如 middlewares。此方法會回傳一個 store 的實例。
+
+### combineReducers(reducers)
+
+當應用程式有多個 reducers，我們就要透過 combineReducers() 來將 reducers 組合成單一個。combineReducers() 要傳入的參數是一個物件，物件的每一個值對應的不同的 reducer，而 key 的名稱將會決定最終 state 的形狀，例如：
+
+```javascript
+combineReducers({
+  foo: fooReducer,
+  bar: barReducer
+});
+```
+
+而最後 store 所產生的 state 將會包含 foo 與 bar 兩個 key，而它們的值則是對應到其 reducer 所回傳的值：
+
+```javascript
+{
+  foo: {...},
+  bar: {...}
+}
+```
+
+### applyMiddleware(...middlewares)
+
+若想要使用 Middleware，在建立 store 時，我們要先將設計好的 Middleware 傳入 applyMiddleware()，然後再將 applyMiddleware() 回傳的函數傳入 createStore() 中。
+
+applyMiddleware() 要傳入的參數沒有限制數量，需要多少 Middleware 就將它們全部都傳入，而每個 Middleware 會接收到 store 分派的 action 和 getState 的函數，並且 Middleware 需要回傳一個函數，這個函數將會接收到下個 Middleware 的分派方法，我們可以在 Middleware 中呼叫下個 Middleware 的分派方法，並將 action 傳入，這樣行為就會傳遞給下個 Middleware，直到最後一個 Middleware 呼叫分派方法時，才會將行為傳遞給 reducer。
+
+### bindActionCreators(actionCreators, dispatch)
+
+bindActionCreators() 是用來將行為產生器 (ActionCreators) 與分派方法結合，它所需要傳入的第一個參數是一個 actionCreator，或是包含多個 actionCreator 的物件，第二個參數是 store 的分派方法，如果傳入的是單一個 actionCreator 的函數，bindActionCreators() 將會回傳一個組合好的函數；若是傳入包含多個 actionCreator 的物件，bindActionCreators() 將會回傳一個模仿原始物件的物件，但是每個值都會是組合好的函數。
+
+### compose(...functions)
