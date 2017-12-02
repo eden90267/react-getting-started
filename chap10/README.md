@@ -154,4 +154,177 @@ applyMiddleware() 要傳入的參數沒有限制數量，需要多少 Middleware
 
 bindActionCreators() 是用來將行為產生器 (ActionCreators) 與分派方法結合，它所需要傳入的第一個參數是一個 actionCreator，或是包含多個 actionCreator 的物件，第二個參數是 store 的分派方法，如果傳入的是單一個 actionCreator 的函數，bindActionCreators() 將會回傳一個組合好的函數；若是傳入包含多個 actionCreator 的物件，bindActionCreators() 將會回傳一個模仿原始物件的物件，但是每個值都會是組合好的函數。
 
+ActionCreators 就是一個產生 action 的函數，因為有些 action 會帶有資料，而那些資料可能每次都不一樣，這樣在產生 action 的時候就必須要重複的建立 action 的物件，actionCreators 就是在簡化這個步驟，只需要將資料傳入，它就會自動產生一個 action 出來，下面舉一個簡單的例子：
+
+```javascript
+function addTodo(text) {
+  return {
+    type: 'ADD_TODO',
+    text
+  }
+}
+```
+
+這邊要注意，Redux 的 actionCreators 就只是單純的產生一個 action，產生出來的 action 必須再另外透過 store 的分派方法分派出去。在 Flux 架構中也有 actionCreators，但是它並不只是單純產生 action 而已，他會在 action 產生後直接將 action 分派出去。
+
 ### compose(...functions)
+
+compose() 可以將傳入的函數從右到左組合起來，並回傳一個新的函數，這是為了方便 createStore() 傳入增強功能時，可能同時會有多種性質的功能要加入，而傳入 compose() 每個函數都會將左邊的函數所回傳的值當作傳入的參數。
+
+接下來以 Todo List 為範例，來介紹如何時做一個 Redux 的應用程式。
+
+## 定義 Action
+
+actions/todoActions.js：
+
+```javascript
+export function addTodo(text) {
+  return {
+    type: 'ADD_TODO',
+    text
+  };
+}
+
+export function changeTodoInput(text) {
+  return {
+    type: 'CHANGE_TODO_INPUT',
+    text
+  };
+}
+
+export function changeSearchInput(text) {
+  return {
+    type: 'CHANGE_SEARCH_INPUT',
+    text
+  };
+}
+```
+
+## 設計 Reducer
+
+state 的樣子：
+
+```javascript
+// state：
+var state = {
+  search: 'search something',
+  todos: {
+    todo: 'new todo input',
+    list: ['foo', 'bar']
+  }
+};
+```
+
+決定好 state 的樣子後，我們就開始設計我們的 reducer。reducer 是一個純函數 (Pure function)，在 action 被分派時，store 會將 store 當前的 state 和 action 當作參數傳入 reducer 中，reducer 會計算出下一個 state 並且將它回傳。
+
+reducers/todoReducers.js：
+
+```javascript
+const initialState = {
+  search: '',
+  todos: {
+    todo: '',
+    list: []
+  }
+};
+
+function todos(state = initialState, action) { // 回傳 state 必須是一個完全新的一個 state 物件，而不是修改原本的 state 物件。
+  switch (action.type) {
+    case 'ADD_TODO':
+      return {
+        ...state,
+        todos: {
+          ...state.todos,
+          list: [...state.todos.list, action.text]
+        }
+      };
+    case 'CHANGE_TODO_INPUT':
+      return {
+        ...state,
+        todos: {
+          ...state.todos,
+          todo: action.text
+        }
+      };
+    case 'CHANGE_SEARCH_INPUT':
+      return {
+        ...state,
+        search: action.text
+      };
+    default: // 沒遇到定義的 action.type 時，直接回傳原本的 state
+      return state;
+  }
+}
+
+export default todos;
+```
+
+這裡將 actionCreator 的 action.type 匯出，並將 actionCreator 中的 action.type 改為對應的變數：
+
+```javascript
+export const ADD_TODO = 'ADD_TOTO';
+export const CHANGE_TODO_INPUT = 'CHANGE_TODO_INPUT';
+export const CHANGE_SEARCH_INPUT = 'CHANGE_SEARCH_INPUT';
+
+export function addTodo(text) {
+  return {
+    type: ADD_TODO,
+    text
+  };
+}
+
+export function changeTodoInput(text) {
+  return {
+    type: CHANGE_TODO_INPUT,
+    text
+  };
+}
+
+export function changeSearchInput(text) {
+  return {
+    type: CHANGE_SEARCH_INPUT,
+    text
+  };
+}
+```
+
+並在 reducer 中將他們引入，這樣可以避免筆誤而引發的錯誤：
+
+```javascript
+import {ADD_TODO, CHANGE_SEARCH_INPUT, CHANGE_TODO_INPUT} from "../actions/todoActions";
+
+// [ ...略 ]
+
+function todos(state = initialState, action) {
+  switch (action.type) {
+    case ADD_TODO:
+      return {
+        ...state,
+        todos: {
+          ...state.todos,
+          list: [...state.todos.list, action.text]
+        }
+      };
+    case CHANGE_TODO_INPUT:
+      return {
+        ...state,
+        todos: {
+          ...state.todos,
+          todo: action.text
+        }
+      };
+    case CHANGE_SEARCH_INPUT:
+      return {
+        ...state,
+        search: action.text
+      };
+    default:
+      return state;
+  }
+}
+```
+
+專案更複雜，我們也可以將 action 的 type 用另外一個檔案來管理。過於簡單的話用字串表示就好了。
+
+## 拆分 reducer
+
