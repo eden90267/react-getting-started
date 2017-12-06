@@ -328,3 +328,63 @@ function todos(state = initialState, action) {
 
 ## 拆分 reducer
 
+當遇到龐大且複雜的應用程式，它所要處理的 action 就會越來越多，這時候就可將 reducer 拆分管理。
+
+那該依據什麼來拆分？我們會依據 state 來拆分，現在我們來改寫 todoReducers.js：
+
+
+```javascript
+import {ADD_TODO, CHANGE_TODO_INPUT} from "../actions/todoActions";
+
+const initialState = {
+  todos: {
+    todo: '',
+    list: []
+  }
+};
+
+function todos(state = initialState, action) {
+  switch (action.type) {
+    case ADD_TODO:
+      return {
+        ...state,
+        todos: {
+          ...state.todos,
+          list: [...state.todos.list, action.text]
+        }
+      };
+    case CHANGE_TODO_INPUT:
+      return {
+        ...state,
+        todos: {
+          ...state.todos,
+          todo: action.text
+        }
+      };
+    default:
+      return state;
+  }
+}
+```
+
+接著新增一個管理 search state 的檔案 searchReducers.js：
+
+```javascript
+import {CHANGE_SEARCH_INPUT} from "../actions/todoActions";
+
+function search(state = '', action) {
+  switch (action.type) {
+    case CHANGE_SEARCH_INPUT:
+      return {
+        ...state,
+        search: action.text
+      };
+    default:
+      return state;
+  }
+}
+
+export default search;
+```
+
+這樣就完成了 reducer 的拆分，但在新增 store 之前，我們要將拆分的 reducer 透過 combineReducers() 組合起來，所以我們需要新增一個負責組合的 reducer 的檔案 index.js
