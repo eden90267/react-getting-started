@@ -693,5 +693,58 @@ export default connect(mapStateToProps, mapDispatchToProps)(TodoList);
 最後在 app.jsx 中頂層元件外加一層 `<Provider>` 標籤，並將之前設計的 store 傳入：
 
 ```javascript
+import React from 'react';
+import ReactDOM from 'react-dom';
+import TodoList from "./components/TodoList";
+import {Provider} from "react-redux";
+import store from "./store";
 
+ReactDOM.render(
+  <Provider store={store}>
+    <TodoList/>
+  </Provider>,
+  document.querySelector('#app')
+);
 ```
+
+到這邊就修改完 Todo List 的 Redux 應用程式了。這邊我們會發現，在 React 中藉由 react-redux 模組使用 Redux，元件要負責的工作變少了，整個程式碼也變得更加簡潔，而且更容易了解！
+
+## 非同步資料流
+
+前面的 Todo List 應用程式中，整個資料流是同步資料流，action 只要一被分派，store 中的 state 都會立即更新，那該如何建立一個非同步的應用程式？我們可利用 Middleware 來處理非同步資料流，本章節主要介紹 Redux Thunk 這個 Middleware 模組。
+
+React Thunk 是一個 Redux 的 Middleware，它允許我們的 action 是一個函數，當它發現我們所分派的 action 是一個函數時，便會將 store 的 dispatch 與 getState 方法傳入函數，而我們就可以在 action 函數中執行非同步的操作，等操作完成後，再將 action 的物件分派出去。
+
+接下來我們用 Todo List 來完成一個非同步資料流的範例。我們在新增 Todo 按鈕後延遲兩秒，才將 Todo 新增到我們的 state 中。首先安裝 Redux Thunk：
+
+```shell
+npm i redux-thunk -S
+```
+
+store/index.js：
+
+```javascript
+import {applyMiddleware, createStore} from "redux";
+import todoApp from "../reducers";
+import thunk from "redux-thunk";
+
+let store = createStore(todoApp, applyMiddleware(thunk));
+
+export default store;
+```
+
+接下來修改 action/todoAction.jsx 的 action 產生器，我們的 action 產生器要改成回傳一個函數，而函數在被分派時，會將 store 的 dispatch 方法當作參數傳入，所以我們就在函數中，用 setTimeout 方法來延遲兩秒，然後在 setTimeout 的回呼函數中分派原本的 ADD_TODO 行為。
+
+```javascript
+export function addTodo(text) {
+  return function (dispatch) {
+    setTimeout(() => {
+      dispatch({type: ADD_TODO, text}, 2000)
+    });
+  };
+}
+```
+
+現在我們完成了非同步的應用程式範例。
+
+這樣我們就可以讓 action 做更多的事情，讓 Redux 應用程式變得更加豐富。
