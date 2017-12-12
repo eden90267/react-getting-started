@@ -330,17 +330,15 @@ function todos(state = initialState, action) {
 
 當遇到龐大且複雜的應用程式，它所要處理的 action 就會越來越多，這時候就可將 reducer 拆分管理。
 
-那該依據什麼來拆分？我們會依據 state 來拆分，現在我們來改寫 todoReducers.js：
+那該依據什麼來拆分？我們會依據 state 來拆分，第一個管理與 todos state 相關的行為；第二個管理與 search state 相關的行為。現在我們來改寫 todoReducers.js：
 
 
 ```javascript
 import {ADD_TODO, CHANGE_TODO_INPUT} from "../actions/todoActions";
 
 const initialState = {
-  todos: {
-    todo: '',
-    list: []
-  }
+  todo: '',
+  list: []
 };
 
 function todos(state = initialState, action) {
@@ -348,18 +346,12 @@ function todos(state = initialState, action) {
     case ADD_TODO:
       return {
         ...state,
-        todos: {
-          ...state.todos,
-          list: [...state.todos.list, action.text]
-        }
+        list: [...state.list, action.text]
       };
     case CHANGE_TODO_INPUT:
       return {
         ...state,
-        todos: {
-          ...state.todos,
-          todo: action.text
-        }
+        todo: action.text
       };
     default:
       return state;
@@ -375,10 +367,7 @@ import {CHANGE_SEARCH_INPUT} from "../actions/todoActions";
 function search(state = '', action) {
   switch (action.type) {
     case CHANGE_SEARCH_INPUT:
-      return {
-        ...state,
-        search: action.text
-      };
+      return action.text;
     default:
       return state;
   }
@@ -387,4 +376,322 @@ function search(state = '', action) {
 export default search;
 ```
 
-這樣就完成了 reducer 的拆分，但在新增 store 之前，我們要將拆分的 reducer 透過 combineReducers() 組合起來，所以我們需要新增一個負責組合的 reducer 的檔案 index.js
+這樣就完成了 reducer 的拆分，但在新增 store 之前，我們要將拆分的 reducer 透過 combineReducers() 組合起來，所以我們需要新增一個負責組合的 reducer 的檔案 index.js。
+
+在 index.js 我們引入 combineReducers() 方法與所有的 reducers，然後將 reducers 用一個物件包裝起來，在物件中我們要將 reducer 指定為對應的 state 值，這樣 store 就會將對應的 state 傳入 reducer 中，並且 store 會將 reducer 所回傳的資料放置到對應的 state，接著再傳入 combineReducer() 中，最後匯出 combineReducer() 所回傳的函數：
+
+```javascript
+import {combineReducers} from "redux";
+
+import todos from './todoReducers';
+import search from './searchReducers';
+
+const todoApp = combineReducers({
+  todos,
+  search
+});
+
+export default todoApp;
+```
+
+通常在實作一個 Redux 應用程式時，都會為了讓程式碼更容易理解，而根據 state 來設計多個 reducer，並在最後將他們根據對應的 state 組合起來。
+
+## 實作 Store
+
+store/index.js：
+
+```javascript
+import {createStore} from "redux";
+import todoApp from "../reducers";
+
+let store = createStore(todoApp);
+
+export default store;
+```
+
+接下來介紹 createStore() 提供了哪些 API：
+
+### getState()
+
+要拿到 store 的 state 時，要透過 getState() 這個方法。
+
+### dispatch(action)
+
+dispatch() 是在 Redux 應用程式中唯一能改變 state 的方法，它需要傳入一個 Action 當作參數，接著 store 會將當前的 state 與此 action 分派出去，如果在創造 store 有傳入增強功能的話，當前的 state 與行為會先被分派到增強功能當中，然後再由增強功能分派給下一個增強功能，最後才分派到 reducer。
+
+### subscribe(listener)
+
+當 action 分派出去後，我們需要有一個監聽狀態改變的監聽器，所以在元件中我們要使用 subscribe 方法來增加一個監聽器，當 action 的分派完成後，這個監聽器將會被呼叫。我們可在監聽器中呼叫 getState() 來讀取新的 state。這個方法會回傳一個函數，當我們想取消這個監聽器訂閱時，只要呼叫它回傳的函數就可以了。
+
+這邊注意，基本上我們不建議開發者在監聽器中呼叫 dispatch()，因為這樣有可能會導致無窮迴圈的發生。
+
+### replaceReducer(nextReducer)
+
+這個方法是用來替換 reducer，當開發者想要改變 reducer 的邏輯時，可以透過這個方法，用新的 reducer 來取代原本在創造 store 時所傳入的 reducer。
+
+接下來我們將 action、reducer、store 與 react 元件結合起來，並完成 Todo List 應用程式。
+
+首先新增 components/TodoList.jsx，然後修改 src/app.jsx：
+
+```javascript
+import React from 'react';
+import ReactDOM from 'react-dom';
+import TodoList from "./components/TodoList";
+
+ReactDOM.render(
+  <TodoList/>,
+  document.querySelector('#app')
+);
+```
+
+components/TodoList.jsx：
+
+```javascript
+import React, {Component} from "react";
+
+class TodoList extends Component {
+  render() {
+    return (
+      <div>
+        <p>Search:</p>
+        <input type="text"/>
+        <br/>
+        <p>New Todo:</p>
+        <input type="text"/>
+        <br/>
+        <button type="button">Add</button>
+        <ul>
+          <li>Todo</li>
+        </ul>
+      </div>
+    )
+  }
+}
+
+export default TodoList;
+```
+
+接著開始將前面設計好的功能加入元件中，首先實作 Todo 輸入欄位的功能：
+
+```javascript
+// ...
+class TodoList extends Component {
+  constructor(props) {
+    super(props);
+    let state = store.getState();
+    this.state = {
+      todos: state.todos.list,
+      todoInputText: state.todos.todo,
+      searchInputText: state.search
+    };
+  }
+  // ...
+}
+// ...
+```
+
+接著定義元件的 componentDidMount 方法，讓元件被掛載到真實的 DOM 時，透過 store 的 subscribe 方法向 store 訂閱，並在監聽器中透過 getState 方法取得最新的 state 來更新元件的 state：
+
+```javascript
+// ...
+class TodoList extends Component {
+  // ...
+  componentDidMount() {
+    var self = this;
+  
+    store.subscribe(function () {
+      let state = store.getState();
+      self.setState({
+        todos: state.todos.list,
+        todoInputText: state.todos.todo,
+        searchInputText: state.search
+      });
+    });
+  }
+  
+  // ...
+}
+// ...
+```
+
+再來修改 render 方法：
+
+```javascript
+// ...
+class TodoList extends Component {
+  // ...
+  render() {
+    const self = this;
+    const todoList = this.state.todos.map(function (todo, idx) {
+      if (todo.includes(self.state.searchInputText)) {
+        return <li key={idx}>{todo}</li>;
+      }
+      return null;
+    });
+    return (
+      <div>
+        <p>Search:</p>
+        <input type="text" value={this.state.searchInputText} onChange={this.handleSearchInput}/>
+        <br/>
+        <p>New Todo:</p>
+        <input type="text" value={this.state.todoInputText} onChange={this.handleTodoInput}/>
+        <br/>
+        <button type="button" onClick={this.handleClick}>Add</button>
+        <ul>
+          <li>{todoList}</li>
+        </ul>
+      </div>
+    );
+  }
+}
+// ...
+```
+
+到這邊就完成整個 Todo List 的 Redux 應用程式了！
+
+## React 與 Redux 結合
+
+Redux 並非專為 React 所設計，它是為 JavaScript 應用程式提供一個可以預測的狀態管理容器，所以我們也可以用 Angular、JQuery 或原生的 JavaScript 來實作 Redux 應用。
+
+Redux 開發者提供了一個 React 專用的模組 React Redux，它讓 React 與 Redux 更緊密結合，並讓開發者更容易使用 React 開發 Redux 應用程式。
+
+React Redux 模組提供了兩個 API：
+
+### `connect([mapStateToProps], [mapDispatchToProps], [mergeProps], [options])`
+
+connect() 將 React 元件與 Store 連接起來，它不會修改原本傳入的元件，而是回傳一個新的元件，然後在新的元件上訂閱 store、分派 action，並將 state 以 props 傳入元件。因此我們就可以將元件設計成純元件 (Presentational Component)，也可以稱為函數元件 (Functional Component)，就是此元件只負責描述如何渲染，而不帶有任何業務邏輯，並且沒有自己的狀態，所有資料都是由 props 提供。
+
+那如果將元件設計成純元件的話，業務邏輯該在哪設計？業務邏輯就要靠 mapStateToProps 與 mapDispatchToProps 這兩個參數提供，這兩個參數都是要傳入一個函數，mapStateToProps 負責將 store 的 state 轉換成純元件所需要的資料並以 props 傳入；mapDispatchToProps 負責將純元件所要分派的行為包裝成函數並以 props 傳入。
+
+mergeProps 參數是一個函數，它負責接收 mapStateToProps 與 mapDispatchToProps 的結果和父元件傳入的 props 當作參數，並且回傳一個物件到元件的 props。一般來說我們不會用到這個參數，此參數在被省略時，它將預設為：
+
+```javascript
+{...ownProps, ...stateProps, ...dispatchProps}
+```
+
+options 參數是一個物件，它是用來讓我們自己定義 connect() 的行為，它可以接受以下選項：
+
+- pure：它是一個布林值，如果 pure 的值為 true，代表後面所要包裝的元件是一個純元件，而 connect() 將會避免重複渲染，並且呼叫 mapStateToProps、mapDispatchToProps 和 mergeProps，其預設為 true
+- areStatesEqual：它是一個函數，當元件為純元件時，將傳入的 state 與之前的值作比較，其預設為 strictEqual (===)
+- areOwnPropsEqual：它是一個函數，當元件為純元件時，將父元件傳入的 props 與之前的值作比較，其預設為 shallowEqual
+- areStatePropsEqual：它是一個函數，當元件為純元件時，將 mapStateToProps 的結果與之前的值做比較，其預設為 shallowEqual
+- areMergedPropsEqual：它是一個函數，當元件為純元件時，將 mergeProps 的結果與之前的值做比較，其預設為 shallowEqual
+
+connect() 在使用時，先將所需要的參數傳入，然後再將我們的元件傳入 connect 所回傳的 React 元件：
+
+```javascript
+connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(myComponent)
+````
+
+### `<Provider store={store}>...</Provider>`
+
+使用 connect() 產生新的元件後，需要讓新的元件拿到 store，這時候要耨過 `<Provider>` 標籤，在最頂層根元件外面再用 `<Provider>` 標籤包一層，並將 store 當作 props 傳入，這樣在根元件下的所有由 connect() 所產生的元件就可以拿到 store。
+
+接下來就來實際使用 React Redux 模組：
+
+```shell
+npm i react-redux -S
+```
+
+TodoaList.jsx，我們先定義第一個參數 mapStateToProps 函數，在 mapStateToProps 我們要將 connect() 所傳入的 state 轉換為元件所需的 props，並且將 props 包裝成物件回傳：
+
+```javascript
+// ...
+const mapStateToProps = (state) => {
+  return {
+    todos: state.todos.list,
+    todoInputText: state.todos.todo,
+    searchInputText: state.search
+  }
+};
+// ...
+```
+
+再來定義第二個參數 mapDispatchToProps 函數，connect() 會將 store 的 dispatch 方法傳入，我們將利用 dispatch 與 action 定義元件所需要的方法，並將方法包裝成物件回傳。這個函數其實就是代替我們在元件中所設計的方法，所以我們可以根據之前設計的方法來完成此函數：
+
+```javascript
+// ...
+const mapDispatchToProps = (dispatch) => {
+  return {
+    handleSearchInput: (text) => {
+      dispatch(changeSearchInput(text));
+    },
+    handleTodoInput: (text) => {
+      dispatch(changeTodoInput(text));
+    },
+    handleClick: (text) => {
+      dispatch(addTodo(text));
+      dispatch(changeTodoInput(''));
+    }
+  }
+};
+// ...
+```
+
+接下來我們來修改 TodoList 元件，現在元件的資料與重新渲染的工作都交給 connect() 處理了，所以在 constructor 方法中就不需要定義 state 的初始值，也不需在 componentDidMount 訂閱 store，並且元件所需的方法都會透過 props 來產生，所以也不需在元件中另外設計方法。
+
+```javascript
+import React, {Component} from "react";
+import {addTodo, changeSearchInput, changeTodoInput} from "../actions/todoActions";
+import {connect} from "react-redux";
+
+class TodoList extends Component {
+  render() {
+    const self = this;
+    const todoList = this.props.todos.map(function (todo, idx) {
+      if (todo.includes(self.props.searchInputText)) {
+        return <li key={idx}>{todo}</li>;
+      }
+      return null;
+    });
+    return (
+      <div>
+        <p>Search:</p>
+        <input type="text" value={this.props.searchInputText} onChange={(evt) => this.props.handleSearchInput(evt.target.value)}/>
+        <br/>
+        <p>New Todo:</p>
+        <input type="text" value={this.props.todoInputText} onChange={(evt) => this.props.handleTodoInput(evt.target.value)}/>
+        <br/>
+        <button type="button" onClick={() => this.props.handleClick(this.props.todoInputText)}>Add</button>
+        <ul>
+          <li>{todoList}</li>
+        </ul>
+      </div>
+    );
+  }
+}
+
+const mapStateToProps = (state) => {
+  return {
+    todos: state.todos.list,
+    todoInputText: state.todos.todo,
+    searchInputText: state.search
+  }
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+    handleSearchInput: (text) => {
+      dispatch(changeSearchInput(text));
+    },
+    handleTodoInput: (text) => {
+      dispatch(changeTodoInput(text));
+    },
+    handleClick: (text) => {
+      dispatch(addTodo(text));
+      dispatch(changeTodoInput(''));
+    }
+  }
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(TodoList);
+```
+
+最後在 app.jsx 中頂層元件外加一層 `<Provider>` 標籤，並將之前設計的 store 傳入：
+
+```javascript
+
+```
